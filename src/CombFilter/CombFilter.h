@@ -14,8 +14,15 @@ public:
 
 	virtual Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) = 0;
 
+	Error_t setGainValue(float fGainValue);
+	Error_t setDelayValue(float fDelayValue);
+	float getGainValue() const;
+	float getDelayValue() const;
+
 private:
 
+	float m_ParamGainValue;
+	float m_ParamDelayValue;
 
 };
 
