@@ -25,10 +25,12 @@ protected:
 	int convertSecondsToSamples(float fDelayValue) const;
 
 	CRingBuffer<float>* m_fDelayLine;
-	float m_ParamGainValue;
-	float m_ParamDelayValue;
+	float m_fGainValue;
+	float m_fDelayValueInS;
 	float m_fMaxDelayLengthInS;
 	float m_fSampleRateInHz;
+	int m_iMaxDelayLengthInSamples;
+	int m_iDelayValueInSamples;
 	int m_iNumChannels;
 
 };

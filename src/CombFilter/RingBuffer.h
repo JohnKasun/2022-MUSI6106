@@ -13,7 +13,8 @@ class CRingBuffer
 {
 public:
     explicit CRingBuffer(int iBufferLengthInSamples) :
-        m_iBuffLength(iBufferLengthInSamples)
+        m_iBuffLength(iBufferLengthInSamples),
+        m_iEndPosition(iBufferLengthInSamples)
     {
         assert(iBufferLengthInSamples > 0);
 
@@ -33,7 +34,7 @@ public:
     {
         put(tNewValue);
         m_iWritePosition++;
-        m_iWritePosition %= m_iBuffLength;
+        m_iWritePosition %= m_iEndPosition;
     }
 
     /*! add a new value of type T to write index
@@ -43,7 +44,7 @@ public:
     void put(T tNewValue)
     {
         m_buffer[m_iWritePosition] = tNewValue;
-        if (m_numValues < m_iBuffLength)
+        if (m_numValues < m_iEndPosition)
             m_numValues++;
     }
 
@@ -54,7 +55,7 @@ public:
     {
         T value = get();
         m_iReadPosition++;
-        m_iReadPosition %= m_iBuffLength;
+        m_iReadPosition %= m_iEndPosition;
         return value;
     }
 
@@ -63,7 +64,7 @@ public:
     */
     T get(int iOffset = 0) const
     {
-        int readPosition = (m_iReadPosition + iOffset) % m_iBuffLength;
+        int readPosition = (m_iReadPosition + iOffset) % m_iEndPosition;
         return m_buffer[readPosition];
     }
 
@@ -94,7 +95,7 @@ public:
     void setWriteIdx(int iNewWriteIdx)
     {
         assert(iNewWriteIdx >= 0);
-        m_iWritePosition = (iNewWriteIdx % m_iBuffLength);
+        m_iWritePosition = (iNewWriteIdx % m_iEndPosition);
     }
 
     /*! return the current index for reading/get
@@ -112,7 +113,7 @@ public:
     void setReadIdx(int iNewReadIdx)
     {
         assert(iNewReadIdx >= 0);
-        m_iReadPosition = (iNewReadIdx % m_iBuffLength);
+        m_iReadPosition = (iNewReadIdx % m_iEndPosition);
     }
 
     /*! returns the number of values currently buffered (note: 0 could also mean the buffer is full!)
@@ -126,15 +127,42 @@ public:
     /*! returns the length of the internal buffer
     \return int
     */
-    int getLength() const
+    int getTotalLength() const
     {
         return m_iBuffLength;
     }
+
+    /* returns the length of the buffer section actively being used -- length between index 0 and (m_iEndPosition - 1)
+    \return int
+    */
+    int getCurrentLength() const
+    {
+        return m_iEndPosition;
+    }
+
+    /* sets the wraparound position
+    \return void
+    */
+    void setEndPosition(int iEndPosition)
+    {
+        assert(iEndPosition <= m_iBuffLength);
+        m_iEndPosition = iSEndPosition;
+    }
+
+    /* returns the value at the end of buffer section actively being used
+    \return int
+    */
+    float getBack() const
+    {
+        return m_buffer[m_iEndPosition - 1];
+    }
+
 private:
     CRingBuffer();
     CRingBuffer(const CRingBuffer& that);
 
     int m_iBuffLength;              //!< length of the internal buffer
+    int m_iEndPosition;
     T* m_buffer = 0;
     int m_iReadPosition = 0;
     int m_iWritePosition = 0;
