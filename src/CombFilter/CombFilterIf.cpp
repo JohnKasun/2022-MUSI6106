@@ -69,17 +69,20 @@ Error_t CCombFilterIf::destroy (CCombFilterIf*& pCCombFilter)
     return Error_t::kNoError;
 }
 
-Error_t CCombFilterIf::init (CombFilterType_t eFilterType, float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels)
+Error_t CCombFilterIf::init(CombFilterType_t eFilterType, float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels)
 {
-    if (!m_bIsInitialized) 
+    if (!m_bIsInitialized)
     {
+        if (fMaxDelayLengthInS < 0.0f || fSampleRateInHz < 0.0f || iNumChannels < 0)
+            return Error_t::kFunctionInvalidArgsError;
+
         switch (eFilterType) 
         {
         case CombFilterType_t::kCombFIR:
-            m_pCCombFilter = new CCombFilterFIR(fMaxDelayLengthInS, iNumChannels);
+            m_pCCombFilter = new CCombFilterFIR(fMaxDelayLengthInS, fSampleRateInHz, iNumChannels);
             break;
         case CombFilterType_t::kCombIIR:
-            m_pCCombFilter = new CCombFilterIIR(fMaxDelayLengthInS, iNumChannels);
+            m_pCCombFilter = new CCombFilterIIR(fMaxDelayLengthInS, fSampleRateInHz, iNumChannels);
             break;
         default:
             return Error_t::kFunctionInvalidArgsError;

@@ -4,12 +4,13 @@
 #include "ErrorDef.h"
 
 #include "CombFilterIf.h"
+#include "RingBuffer.h"
 
 
 class CCombFilterBase : public CCombFilterIf
 {
 public:
-	CCombFilterBase(float fMaxDelayLengthInS, int iNumChannels);
+	CCombFilterBase(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels);
 	virtual ~CCombFilterBase();
 
 	virtual Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) = 0;
@@ -19,11 +20,15 @@ public:
 	float getGainValue() const;
 	float getDelayValue() const;
 
-private:
+protected:
 
+	int convertSecondsToSamples(float fDelayValue) const;
+
+	CRingBuffer<float>* m_fDelayLine;
 	float m_ParamGainValue;
 	float m_ParamDelayValue;
 	float m_fMaxDelayLengthInS;
+	float m_fSampleRateInHz;
 	int m_iNumChannels;
 
 };
@@ -31,7 +36,7 @@ private:
 class CCombFilterFIR : public CCombFilterBase
 {
 public:
-	CCombFilterFIR(float fMaxDelayLengthInS, int iNumChannels);
+	CCombFilterFIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels);
 	virtual ~CCombFilterFIR();
 
 	Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) override;
@@ -40,7 +45,7 @@ public:
 class CCombFilterIIR : public CCombFilterBase
 {
 public:
-	CCombFilterIIR(float fMaxDelayLengthInS, int iNumChannels);
+	CCombFilterIIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels);
 	virtual ~CCombFilterIIR();
 
 	Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) override;
