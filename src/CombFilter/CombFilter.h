@@ -24,7 +24,7 @@ protected:
 
 	int convertSecondsToSamples(float fDelayValue) const;
 
-	CRingBuffer<float>* m_fDelayLine;
+	CRingBuffer<float>** m_fDelayLine;
 	float m_fGainValue;
 	float m_fDelayValueInS;
 	float m_fMaxDelayLengthInS;

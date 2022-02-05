@@ -13,17 +13,22 @@ CCombFilterBase::CCombFilterBase(float fMaxDelayLengthInS, float fSampleRateInHz
 		m_iDelayValueInSamples(0)
 {
 	m_iMaxDelayLengthInSamples = convertSecondsToSamples(fMaxDelayLengthInS);
-	m_fDelayLine = new CRingBuffer<float>(static_cast<int>(m_iMaxDelayLengthInSamples));
+	m_fDelayLine = new CRingBuffer<float>*[iNumChannels];
+	for (int channel = 0; channel < iNumChannels; channel++)
+		m_fDelayLine[channel] = new CRingBuffer<float>(m_iMaxDelayLengthInSamples);
 }
 
 CCombFilterBase::~CCombFilterBase()
 {
-	delete m_fDelayLine;
+	for (int channel = 0; channel < m_iNumChannels; channel++)
+		delete[] m_fDelayLine[channel];
+	delete[] m_fDelayLine;
 	m_fDelayLine = 0;
 }
 
 Error_t CCombFilterBase::setGainValue(float fGainValue)
 {
+	assert(fGainValue >= -1.0 && fGainValue <= 1.0);
 	if (fGainValue < -1.0 || fGainValue > 1.0)
 		return Error_t::kFunctionInvalidArgsError;
 
@@ -33,12 +38,14 @@ Error_t CCombFilterBase::setGainValue(float fGainValue)
 
 Error_t CCombFilterBase::setDelayValue(float fDelayValue)
 {
+	assert(fDelayValue >= 0 && fDelayValue <= m_fMaxDelayLengthInS);
 	if (fDelayValue < 0 || fDelayValue > m_fMaxDelayLengthInS)
 		return Error_t::kFunctionInvalidArgsError;
 
 	m_fDelayValueInS = fDelayValue;
 	m_iDelayValueInSamples = convertSecondsToSamples(fDelayValue);
-	m_fDelayLine->setEndPosition(m_iDelayValueInSamples);
+	for (int channel = 0; channel < m_iNumChannels; channel++)
+		m_fDelayLine[channel]->setEndPosition(m_iDelayValueInSamples);
 	return Error_t::kNoError;
 }
 
@@ -76,21 +83,19 @@ Error_t CCombFilterFIR::process(float** ppfAudioInputBuffer, float** ppfAudioOut
 {
 	for (int channel = 0; channel < m_iNumChannels; channel++)
 	{
-		m_fDelayLine->reset();
+		CRingBuffer<float>* fCurrentDelayLine = m_fDelayLine[channel];
 		for (int sample = 0; sample < iNumberOfFrames; sample++)
 		{
 			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
-			float fNewOutput = fCurrentSample + (m_fGainValue * m_fDelayLine->getPostInc());
+			float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
 			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
-			for (int i = 0; i < m_fDelayLine->getCurrentLength() - 1; i++)
+			for (int i = 0; i < fCurrentDelayLine->getCurrentLength() - 1; i++)
 			{
-				float fValueToBeShifted = m_fDelayLine->getPostInc();
-				m_fDelayLine->putPostInc(fValueToBeShifted);
+				float fValueToBeShifted = fCurrentDelayLine->getPostInc();
+				fCurrentDelayLine->putPostInc(fValueToBeShifted);
 			}
-			m_fDelayLine->put(fCurrentSample);
-			m_fDelayLine->setReadIdx(0);
-			m_fDelayLine->setWriteIdx(0);
-			m_fDelayLine->display();
+			fCurrentDelayLine->putPostInc(fCurrentSample);
+			//fCurrentDelayLine->display();
 		}
 	}
 	return Error_t::kNoError;
@@ -112,6 +117,23 @@ CCombFilterIIR::~CCombFilterIIR()
 
 Error_t CCombFilterIIR::process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames)
 {
+	for (int channel = 0; channel < m_iNumChannels; channel++)
+	{
+		CRingBuffer<float>* fCurrentDelayLine = m_fDelayLine[channel];
+		for (int sample = 0; sample < iNumberOfFrames; sample++)
+		{
+			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
+			float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
+			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
+			for (int i = 0; i < fCurrentDelayLine->getCurrentLength() - 1; i++)
+			{
+				float fValueToBeShifted = fCurrentDelayLine->getPostInc();
+				fCurrentDelayLine->putPostInc(fValueToBeShifted);
+			}
+			fCurrentDelayLine->putPostInc(fNewOutput);
+			//fCurrentDelayLine->display();
+		}
+	}
 	return Error_t::kNoError;
 }
 //=================================

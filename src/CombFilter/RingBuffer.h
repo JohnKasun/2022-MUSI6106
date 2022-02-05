@@ -141,23 +141,18 @@ public:
         return m_iEndPosition;
     }
 
-    /* sets the wraparound position
+    /* sets a wraparound position that is shorter than the max buffer length
     \return void
     */
-    void setEndPosition(int iEndPosition)
+    void setEndPosition(int iNewEndPosition)
     {
-        assert(iEndPosition <= m_iBuffLength);
-        m_iEndPosition = iEndPosition;
+        assert(iNewEndPosition >= 0 && iNewEndPosition <= m_iBuffLength);
+        m_iEndPosition = iNewEndPosition;
     }
 
-    /* returns the value at the end of buffer section actively being used
-    \return int
+    /* displays contents of buffer up to m_iEndPosition
+    \return void
     */
-    float getBack() const
-    {
-        return m_buffer[m_iEndPosition - 1];
-    }
-
     void display()
     {
         setReadIdx(0);

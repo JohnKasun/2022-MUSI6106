@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
 
 
-    int iNumChannels = 2;
+    int iNumChannels = 1;
     int iNumSamples = 10;
     float **ppfAudioInputBuffer = 0;
     float** ppfAudioOutputBuffer = 0;
@@ -136,23 +136,28 @@ int main(int argc, char* argv[])
     {
         ppfAudioInputBuffer[channel] = new float[iNumSamples] {};
         ppfAudioOutputBuffer[channel] = new float[iNumSamples] {};
+        ppfAudioInputBuffer[channel][0] = 1;
     }
 
-    for (int channel = 0; channel < iNumChannels; channel++)
+    /*for (int channel = 0; channel < iNumChannels; channel++)
     {
         for (int sample = 0; sample < iNumSamples; sample++)
         {
             ppfAudioInputBuffer[channel][sample] = static_cast<float>(1);
         }
-    }
+    }*/
 
 
     CCombFilterIf* pCombFilter = 0;
     CCombFilterIf::create(pCombFilter);
-    pCombFilter->init(CCombFilterIf::CombFilterType_t::kCombFIR, 1, 1.0f, iNumChannels);
+    pCombFilter->init(CCombFilterIf::CombFilterType_t::kCombIIR, 10, 1.0f, iNumChannels);
     pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, 0.5f);
-    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
 
+    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
+    displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
+    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
+    displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
+    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
     displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
 
     for (int i = 0; i < iNumChannels; i++)
@@ -173,6 +178,7 @@ int main(int argc, char* argv[])
 
 void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumChannels, int iNumSamples)
 {
+    std::cout << "=======================================" << std::endl;
     std::cout << "Input: " << std::endl;
     for (int channel = 0; channel < iNumChannels; channel++)
     {
@@ -194,6 +200,7 @@ void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer,
         }
         std::cout << "]" << std::endl;
     }
+    std::cout << "=======================================" << std::endl;
 }
 
 void     showClInfo()
