@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 
 /*! \brief implement a circular buffer of type T
 */
@@ -146,7 +147,7 @@ public:
     void setEndPosition(int iEndPosition)
     {
         assert(iEndPosition <= m_iBuffLength);
-        m_iEndPosition = iSEndPosition;
+        m_iEndPosition = iEndPosition;
     }
 
     /* returns the value at the end of buffer section actively being used
@@ -155,6 +156,17 @@ public:
     float getBack() const
     {
         return m_buffer[m_iEndPosition - 1];
+    }
+
+    void display()
+    {
+        setReadIdx(0);
+        std::cout << "[ ";
+        for (int i = 0; i < getCurrentLength(); i++)
+        {
+            std::cout << getPostInc() << " ";
+        }
+        std::cout << "]" << std::endl;
     }
 
 private:
