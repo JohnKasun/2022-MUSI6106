@@ -129,7 +129,7 @@ public:
         return m_iBuffLength;
     }
 
-    /* displays contents of buffer
+    /*! displays contents of buffer
     \return void
     */
     void display()

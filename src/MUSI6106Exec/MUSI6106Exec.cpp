@@ -153,14 +153,14 @@ int main(int argc, char* argv[])
     CCombFilterIf::create(pCombFilter);
     pCombFilter->init(CCombFilterIf::CombFilterType_t::kCombFIR, 20, 1.0f, iNumChannels);
     pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, 0.5f);
-    pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, 23);
+    pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, 5);
 
     pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
     displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
-    //pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
-    //displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
-    //pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
-    //displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
+    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
+    displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
+    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
+    displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
 
     for (int i = 0; i < iNumChannels; i++)
     {
@@ -180,7 +180,9 @@ int main(int argc, char* argv[])
 
 void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumChannels, int iNumSamples)
 {
-    std::cout << "=======================================" << std::endl;
+    static int iNumBlock = 0;
+
+    std::cout << "===Block " << ++iNumBlock << "=============================" << std::endl;
     std::cout << "Input: " << std::endl;
     for (int channel = 0; channel < iNumChannels; channel++)
     {
