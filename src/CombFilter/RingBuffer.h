@@ -15,7 +15,9 @@ class CRingBuffer
 public:
     explicit CRingBuffer(int iBufferLengthInSamples) :
         m_iBuffLength(iBufferLengthInSamples),
-        m_iEndPosition(iBufferLengthInSamples)
+        m_iReadPosition(0),
+        m_iWritePosition(0),
+        m_iDelayLength(iBufferLengthInSamples)
     {
         assert(iBufferLengthInSamples > 0);
 
@@ -24,7 +26,8 @@ public:
 
     virtual ~CRingBuffer()
     {
-        delete m_buffer;
+        delete[] m_buffer;
+        m_buffer = 0;
     }
 
     /*! add a new value of type T to write index and increment write index
@@ -34,8 +37,7 @@ public:
     void putPostInc(T tNewValue)
     {
         put(tNewValue);
-        m_iWritePosition++;
-        m_iWritePosition %= m_iEndPosition;
+        wrapAround(++m_iWritePosition);
     }
 
     /*! add a new value of type T to write index
@@ -45,8 +47,6 @@ public:
     void put(T tNewValue)
     {
         m_buffer[m_iWritePosition] = tNewValue;
-        if (m_numValues < m_iEndPosition)
-            m_numValues++;
     }
 
     /*! return the value at the current read index and increment the read pointer
@@ -54,10 +54,8 @@ public:
     */
     T getPostInc()
     {
-        T value = get();
-        m_iReadPosition++;
-        m_iReadPosition %= m_iEndPosition;
-        return value;
+        wrapAround(++m_iReadPosition);
+        return get();
     }
 
     /*! return the value at the current read index
@@ -65,8 +63,7 @@ public:
     */
     T get(int iOffset = 0) const
     {
-        int readPosition = (m_iReadPosition + iOffset) % m_iEndPosition;
-        return m_buffer[readPosition];
+        return m_buffer[wrapAround(m_iReadPosition + iOffset)];
     }
 
     /*! set buffer content and indices to 0
@@ -76,7 +73,6 @@ public:
     {
         m_iReadPosition = 0;
         m_iWritePosition = 0;
-        m_numValues = 0;
         for (int i = 0; i < m_iBuffLength; i++)
             m_buffer[i] = 0;
     }
@@ -95,8 +91,8 @@ public:
     */
     void setWriteIdx(int iNewWriteIdx)
     {
-        assert(iNewWriteIdx >= 0);
-        m_iWritePosition = (iNewWriteIdx % m_iEndPosition);
+        //assert(iNewWriteIdx >= 0 && iNewWriteIdx < m_iDelayLength);
+        m_iWritePosition = checkBounds(iNewWriteIdx, m_iDelayLength - 1);
     }
 
     /*! return the current index for reading/get
@@ -113,8 +109,8 @@ public:
     */
     void setReadIdx(int iNewReadIdx)
     {
-        assert(iNewReadIdx >= 0);
-        m_iReadPosition = (iNewReadIdx % m_iEndPosition);
+        //assert(iNewReadIdx >= 0 && iNewReadIdx < m_iDelayLength);
+        m_iReadPosition = handleBounds(iNewReadIdx, m_iDelayLength - 1);
     }
 
     /*! returns the number of values currently buffered (note: 0 could also mean the buffer is full!)
@@ -122,32 +118,24 @@ public:
     */
     int getNumValuesInBuffer() const
     {
-        return m_numValues;
+        return wrapAround(m_iReadPosition - m_iWritePosition);
     }
 
     /*! returns the length of the internal buffer
     \return int
     */
-    int getTotalLength() const
+    int getLength() const
     {
         return m_iBuffLength;
-    }
-
-    /* returns the length of the buffer section actively being used -- length between index 0 and (m_iEndPosition - 1)
-    \return int
-    */
-    int getCurrentLength() const
-    {
-        return m_iEndPosition;
     }
 
     /* sets a wraparound position that is shorter than the max buffer length
     \return void
     */
-    void setEndPosition(int iNewEndPosition)
+    void setDelayLength(int iNewDelayLength)
     {
-        assert(iNewEndPosition >= 0 && iNewEndPosition <= m_iBuffLength);
-        m_iEndPosition = iNewEndPosition;
+        //assert(iNewDelayLength >= 0 && iNewDelayLength <= m_iBuffLength);
+        m_iDelayLength = handleBounds(iNewDelayLength, m_iBuffLength);
     }
 
     /* displays contents of buffer up to m_iEndPosition
@@ -169,10 +157,24 @@ private:
     CRingBuffer(const CRingBuffer& that);
 
     int m_iBuffLength;              //!< length of the internal buffer
-    int m_iEndPosition;
+    int m_iReadPosition;
+    int m_iWritePosition;
+    int m_iDelayLength;
     T* m_buffer = 0;
-    int m_iReadPosition = 0;
-    int m_iWritePosition = 0;
-    int m_numValues = 0;
+
+    int wrapAround(int& iValue)
+    {
+        iValue %= m_iDelayLength;
+        return iValue;
+    }
+    
+    int handleBounds(int iValue, int iUpperBound, int iLowerBound = 0)
+    {
+        if (iValue < iLowerBound)
+            iValue = iLowerBound;
+        else if (iValue > iUpperBound)
+            iValue = iUpperBound;
+        return iValue;
+    }
 };
 #endif // __RingBuffer_hdr__

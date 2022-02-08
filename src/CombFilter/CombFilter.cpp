@@ -45,7 +45,7 @@ Error_t CCombFilterBase::setDelayValue(float fDelayValue)
 	m_fDelayValueInS = fDelayValue;
 	m_iDelayValueInSamples = convertSecondsToSamples(fDelayValue);
 	for (int channel = 0; channel < m_iNumChannels; channel++)
-		m_fDelayLine[channel]->setEndPosition(m_iDelayValueInSamples);
+		m_fDelayLine[channel]->setDelayLength(m_iDelayValueInSamples);
 	return Error_t::kNoError;
 }
 
@@ -81,23 +81,23 @@ CCombFilterFIR::~CCombFilterFIR()
 
 Error_t CCombFilterFIR::process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames)
 {
-	for (int channel = 0; channel < m_iNumChannels; channel++)
-	{
-		CRingBuffer<float>* fCurrentDelayLine = m_fDelayLine[channel];
-		for (int sample = 0; sample < iNumberOfFrames; sample++)
-		{
-			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
-			float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
-			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
-			for (int i = 0; i < fCurrentDelayLine->getCurrentLength() - 1; i++)
-			{
-				float fValueToBeShifted = fCurrentDelayLine->getPostInc();
-				fCurrentDelayLine->putPostInc(fValueToBeShifted);
-			}
-			fCurrentDelayLine->putPostInc(fCurrentSample);
-			//fCurrentDelayLine->display();
-		}
-	}
+	//for (int channel = 0; channel < m_iNumChannels; channel++)
+	//{
+	//	CRingBuffer<float>* fCurrentDelayLine = m_fDelayLine[channel];
+	//	for (int sample = 0; sample < iNumberOfFrames; sample++)
+	//	{
+	//		float fCurrentSample = ppfAudioInputBuffer[channel][sample];
+	//		float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
+	//		ppfAudioOutputBuffer[channel][sample] = fNewOutput;
+	//		for (int i = 0; i < fCurrentDelayLine->getCurrentLength() - 1; i++)
+	//		{
+	//			float fValueToBeShifted = fCurrentDelayLine->getPostInc();
+	//			fCurrentDelayLine->putPostInc(fValueToBeShifted);
+	//		}
+	//		fCurrentDelayLine->putPostInc(fCurrentSample);
+	//		//fCurrentDelayLine->display();
+	//	}
+	//}
 	return Error_t::kNoError;
 }
 //=================================
@@ -117,23 +117,23 @@ CCombFilterIIR::~CCombFilterIIR()
 
 Error_t CCombFilterIIR::process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames)
 {
-	for (int channel = 0; channel < m_iNumChannels; channel++)
-	{
-		CRingBuffer<float>* fCurrentDelayLine = m_fDelayLine[channel];
-		for (int sample = 0; sample < iNumberOfFrames; sample++)
-		{
-			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
-			float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
-			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
-			for (int i = 0; i < fCurrentDelayLine->getCurrentLength() - 1; i++)
-			{
-				float fValueToBeShifted = fCurrentDelayLine->getPostInc();
-				fCurrentDelayLine->putPostInc(fValueToBeShifted);
-			}
-			fCurrentDelayLine->putPostInc(fNewOutput);
-			//fCurrentDelayLine->display();
-		}
-	}
+	//for (int channel = 0; channel < m_iNumChannels; channel++)
+	//{
+	//	CRingBuffer<float>* fCurrentDelayLine = m_fDelayLine[channel];
+	//	for (int sample = 0; sample < iNumberOfFrames; sample++)
+	//	{
+	//		float fCurrentSample = ppfAudioInputBuffer[channel][sample];
+	//		float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
+	//		ppfAudioOutputBuffer[channel][sample] = fNewOutput;
+	//		for (int i = 0; i < fCurrentDelayLine->getCurrentLength() - 1; i++)
+	//		{
+	//			float fValueToBeShifted = fCurrentDelayLine->getPostInc();
+	//			fCurrentDelayLine->putPostInc(fValueToBeShifted);
+	//		}
+	//		fCurrentDelayLine->putPostInc(fNewOutput);
+	//		//fCurrentDelayLine->display();
+	//	}
+	//}
 	return Error_t::kNoError;
 }
 //=================================
