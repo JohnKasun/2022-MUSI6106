@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
     {
         ppfAudioInputBuffer[channel] = new float[iNumSamples] {};
         ppfAudioOutputBuffer[channel] = new float[iNumSamples] {};
-        //ppfAudioInputBuffer[channel][0] = 1;
+        ppfAudioInputBuffer[channel][0] = 1;
     }
 
 
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
     CCombFilterIf::create(pCombFilter);
     pCombFilter->init(CCombFilterIf::CombFilterType_t::kCombFIR, 20, 1.0f, iNumChannels);
     pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, 0.5f);
-    pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, 17);
+    pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, 23);
 
     pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
     displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);

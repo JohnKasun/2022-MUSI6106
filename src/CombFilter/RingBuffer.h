@@ -164,10 +164,9 @@ private:
     int handleIndexBounds(int iValue) const
     {
         if (iValue < 0)
-            iValue = 0;
-        else if (iValue >= m_iBuffLength)
-            iValue = m_iBuffLength - 1;
-        return iValue;
+            return 0;
+        else
+            return wrapAround(iValue);
     }
 };
 #endif // __RingBuffer_hdr__

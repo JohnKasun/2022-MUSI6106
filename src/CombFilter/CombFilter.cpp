@@ -28,7 +28,6 @@ CCombFilterBase::~CCombFilterBase()
 
 Error_t CCombFilterBase::setGainValue(float fGainValue)
 {
-	assert(fGainValue >= -1.0 && fGainValue <= 1.0);
 	if (fGainValue < -1.0 || fGainValue > 1.0)
 		return Error_t::kFunctionInvalidArgsError;
 
@@ -38,14 +37,16 @@ Error_t CCombFilterBase::setGainValue(float fGainValue)
 
 Error_t CCombFilterBase::setDelayValue(float fDelayValue)
 {
-	assert(fDelayValue >= 0 && fDelayValue <= m_fMaxDelayLengthInS);
 	if (fDelayValue < 0 || fDelayValue > m_fMaxDelayLengthInS)
 		return Error_t::kFunctionInvalidArgsError;
 
 	m_fDelayValueInS = fDelayValue;
 	m_iDelayValueInSamples = convertSecondsToSamples(fDelayValue);
 	for (int channel = 0; channel < m_iNumChannels; channel++)
-		m_fDelayLine[channel]->setWriteIdx(m_iDelayValueInSamples);
+	{
+		int iCurrentReadIdx = m_fDelayLine[channel]->getReadIdx();
+		m_fDelayLine[channel]->setWriteIdx(iCurrentReadIdx + m_iDelayValueInSamples);
+	}
 	return Error_t::kNoError;
 }
 
@@ -68,17 +69,6 @@ int CCombFilterBase::convertSecondsToSamples(float fDelayValue) const
 
 
 //=================================
-CCombFilterFIR::CCombFilterFIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels) :
-	CCombFilterBase(fMaxDelayLengthInS, fSampleRateInHz, iNumChannels)
-{
-
-}
-
-CCombFilterFIR::~CCombFilterFIR()
-{
-
-}
-
 Error_t CCombFilterFIR::process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames)
 {
 	for (int channel = 0; channel < m_iNumChannels; channel++)
@@ -88,8 +78,8 @@ Error_t CCombFilterFIR::process(float** ppfAudioInputBuffer, float** ppfAudioOut
 		{
 			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
 			float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
-			fCurrentDelayLine->putPostInc(fCurrentSample);
 			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
+			fCurrentDelayLine->putPostInc(fCurrentSample);
 		}
 	}
 	return Error_t::kNoError;
@@ -98,17 +88,6 @@ Error_t CCombFilterFIR::process(float** ppfAudioInputBuffer, float** ppfAudioOut
 
 
 //=================================
-CCombFilterIIR::CCombFilterIIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels) :
-	 CCombFilterBase(fMaxDelayLengthInS, fSampleRateInHz, iNumChannels)
-{
-
-}
-
-CCombFilterIIR::~CCombFilterIIR()
-{
-
-}
-
 Error_t CCombFilterIIR::process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames)
 {
 	for (int channel = 0; channel < m_iNumChannels; channel++)
@@ -118,8 +97,8 @@ Error_t CCombFilterIIR::process(float** ppfAudioInputBuffer, float** ppfAudioOut
 		{
 			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
 			float fNewOutput = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
-			fCurrentDelayLine->putPostInc(fNewOutput);
 			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
+			fCurrentDelayLine->putPostInc(fNewOutput);
 		}
 	}
 	return Error_t::kNoError;

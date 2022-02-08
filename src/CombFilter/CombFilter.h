@@ -38,8 +38,9 @@ protected:
 class CCombFilterFIR : public CCombFilterBase
 {
 public:
-	CCombFilterFIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels);
-	virtual ~CCombFilterFIR();
+	CCombFilterFIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels) : 
+		CCombFilterBase(fMaxDelayLengthInS, fSampleRateInHz, iNumChannels) {};
+	virtual ~CCombFilterFIR() = default;
 
 	Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) override;
 };
@@ -47,8 +48,9 @@ public:
 class CCombFilterIIR : public CCombFilterBase
 {
 public:
-	CCombFilterIIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels);
-	virtual ~CCombFilterIIR();
+	CCombFilterIIR(float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels) :
+		CCombFilterBase(fMaxDelayLengthInS, fSampleRateInHz, iNumChannels) {};
+	virtual ~CCombFilterIIR() = default;
 
 	Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) override;
 };
