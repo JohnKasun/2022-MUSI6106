@@ -16,8 +16,7 @@ public:
     explicit CRingBuffer(int iBufferLengthInSamples) :
         m_iBuffLength(iBufferLengthInSamples),
         m_iReadPosition(0),
-        m_iWritePosition(0),
-        m_iDelayLength(iBufferLengthInSamples)
+        m_iWritePosition(0)
     {
         assert(iBufferLengthInSamples > 0);
 
@@ -37,7 +36,7 @@ public:
     void putPostInc(T tNewValue)
     {
         put(tNewValue);
-        wrapAround(++m_iWritePosition);
+        m_iWritePosition = wrapAround(++m_iWritePosition);
     }
 
     /*! add a new value of type T to write index
@@ -54,8 +53,9 @@ public:
     */
     T getPostInc()
     {
-        wrapAround(++m_iReadPosition);
-        return get();
+        T value = get();
+        m_iReadPosition = wrapAround(++m_iReadPosition);
+        return value;
     }
 
     /*! return the value at the current read index
@@ -92,7 +92,7 @@ public:
     void setWriteIdx(int iNewWriteIdx)
     {
         //assert(iNewWriteIdx >= 0 && iNewWriteIdx < m_iDelayLength);
-        m_iWritePosition = checkBounds(iNewWriteIdx, m_iDelayLength - 1);
+        m_iWritePosition = handleIndexBounds(iNewWriteIdx);
     }
 
     /*! return the current index for reading/get
@@ -110,7 +110,7 @@ public:
     void setReadIdx(int iNewReadIdx)
     {
         //assert(iNewReadIdx >= 0 && iNewReadIdx < m_iDelayLength);
-        m_iReadPosition = handleBounds(iNewReadIdx, m_iDelayLength - 1);
+        m_iReadPosition = handleIndexBounds(iNewReadIdx);
     }
 
     /*! returns the number of values currently buffered (note: 0 could also mean the buffer is full!)
@@ -118,7 +118,7 @@ public:
     */
     int getNumValuesInBuffer() const
     {
-        return wrapAround(m_iReadPosition - m_iWritePosition);
+        return wrapAround(m_iWritePosition - m_iReadPosition);
     }
 
     /*! returns the length of the internal buffer
@@ -129,27 +129,19 @@ public:
         return m_iBuffLength;
     }
 
-    /* sets a wraparound position that is shorter than the max buffer length
-    \return void
-    */
-    void setDelayLength(int iNewDelayLength)
-    {
-        //assert(iNewDelayLength >= 0 && iNewDelayLength <= m_iBuffLength);
-        m_iDelayLength = handleBounds(iNewDelayLength, m_iBuffLength);
-    }
-
-    /* displays contents of buffer up to m_iEndPosition
+    /* displays contents of buffer
     \return void
     */
     void display()
     {
-        setReadIdx(0);
         std::cout << "[ ";
-        for (int i = 0; i < getCurrentLength(); i++)
+        for (int i = 0; i < m_iBuffLength; i++)
         {
-            std::cout << getPostInc() << " ";
+            std::cout << m_buffer[i] << " ";
         }
-        std::cout << "]" << std::endl;
+        std::cout << "]";
+
+        std::cout << " Number of Values: " << getNumValuesInBuffer() << std::endl;
     }
 
 private:
@@ -159,21 +151,22 @@ private:
     int m_iBuffLength;              //!< length of the internal buffer
     int m_iReadPosition;
     int m_iWritePosition;
-    int m_iDelayLength;
     T* m_buffer = 0;
 
-    int wrapAround(int& iValue)
+    int wrapAround(int iValue) const
     {
-        iValue %= m_iDelayLength;
+        while (iValue < 0)
+            iValue += m_iBuffLength;
+        iValue %= m_iBuffLength;
         return iValue;
     }
-    
-    int handleBounds(int iValue, int iUpperBound, int iLowerBound = 0)
+
+    int handleIndexBounds(int iValue) const
     {
-        if (iValue < iLowerBound)
-            iValue = iLowerBound;
-        else if (iValue > iUpperBound)
-            iValue = iUpperBound;
+        if (iValue < 0)
+            iValue = 0;
+        else if (iValue >= m_iBuffLength)
+            iValue = m_iBuffLength - 1;
         return iValue;
     }
 };

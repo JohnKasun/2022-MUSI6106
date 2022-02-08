@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 
 
     int iNumChannels = 1;
-    int iNumSamples = 10;
+    int iNumSamples = 19;
     float **ppfAudioInputBuffer = 0;
     float** ppfAudioOutputBuffer = 0;
     ppfAudioInputBuffer = new float* [iNumChannels];
@@ -136,29 +136,31 @@ int main(int argc, char* argv[])
     {
         ppfAudioInputBuffer[channel] = new float[iNumSamples] {};
         ppfAudioOutputBuffer[channel] = new float[iNumSamples] {};
-        ppfAudioInputBuffer[channel][0] = 1;
+        //ppfAudioInputBuffer[channel][0] = 1;
     }
 
-    /*for (int channel = 0; channel < iNumChannels; channel++)
+
+    for (int channel = 0; channel < iNumChannels; channel++)
     {
         for (int sample = 0; sample < iNumSamples; sample++)
         {
-            ppfAudioInputBuffer[channel][sample] = static_cast<float>(1);
+            ppfAudioInputBuffer[channel][sample] = static_cast<float>(sample + 1);
         }
-    }*/
+    }
 
 
     CCombFilterIf* pCombFilter = 0;
     CCombFilterIf::create(pCombFilter);
-    pCombFilter->init(CCombFilterIf::CombFilterType_t::kCombIIR, 10, 1.0f, iNumChannels);
+    pCombFilter->init(CCombFilterIf::CombFilterType_t::kCombFIR, 20, 1.0f, iNumChannels);
     pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, 0.5f);
+    pCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, 17);
 
     pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
     displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
-    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
-    displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
-    pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
-    displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
+    //pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
+    //displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
+    //pCombFilter->process(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumSamples);
+    //displayIOBuffers(ppfAudioInputBuffer, ppfAudioOutputBuffer, iNumChannels, iNumSamples);
 
     for (int i = 0; i < iNumChannels; i++)
     {
