@@ -15,22 +15,20 @@ public:
 
 	virtual Error_t process(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumberOfFrames) = 0;
 
-	Error_t setGainValue(float fGainValue);
-	Error_t setDelayValue(float fDelayValue);
-	float getGainValue() const;
-	float getDelayValue() const;
+	Error_t setParam(FilterParam_t eParam, float fParamValue);
+	float getParam(FilterParam_t eParam) const;
 
 protected:
 
 	int convertSecondsToSamples(float fDelayValue) const;
+	Error_t setGainValue(float fGainValue);
+	Error_t setDelayValue(float fDelayValue);
 
 	CRingBuffer<float>** m_fDelayLine;
 	float m_fGainValue;
 	float m_fDelayValueInS;
 	float m_fMaxDelayLengthInS;
 	float m_fSampleRateInHz;
-	int m_iMaxDelayLengthInSamples;
-	int m_iDelayValueInSamples;
 	int m_iNumChannels;
 
 };

@@ -58,6 +58,9 @@ const char*  CCombFilterIf::getBuildDate ()
 
 Error_t CCombFilterIf::create (CCombFilterIf*& pCCombFilter)
 {
+    if (pCCombFilter)
+        return Error_t::kMemError;
+
     pCCombFilter = new CCombFilterIf();
     return Error_t::kNoError;
 }
@@ -107,28 +110,12 @@ Error_t CCombFilterIf::process (float **ppfInputBuffer, float **ppfOutputBuffer,
     return m_pCCombFilter->process(ppfInputBuffer, ppfOutputBuffer, iNumberOfFrames);
 }
 
-Error_t CCombFilterIf::setParam (FilterParam_t eParam, float fParamValue)
+Error_t CCombFilterIf::setParam(FilterParam_t eParam, float fParamValue)
 {
-    switch (eParam) 
-    {
-    case FilterParam_t::kParamDelay:
-        return m_pCCombFilter->setDelayValue(fParamValue);
-    case FilterParam_t::kParamGain:
-        return m_pCCombFilter->setGainValue(fParamValue);
-    default:
-        return Error_t::kFunctionInvalidArgsError;
-    }
+    return m_pCCombFilter->setParam(eParam, fParamValue);
 }
 
 float CCombFilterIf::getParam (FilterParam_t eParam) const
 {
-    switch (eParam) 
-    {
-    case FilterParam_t::kParamDelay:
-        return m_pCCombFilter->getDelayValue();
-    case FilterParam_t::kParamGain:
-        return m_pCCombFilter->getGainValue();
-    default:
-        return 0;
-    }
+    return m_pCCombFilter->getParam(eParam);
 }

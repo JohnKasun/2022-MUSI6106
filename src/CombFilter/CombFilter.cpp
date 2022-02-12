@@ -9,10 +9,9 @@ CCombFilterBase::CCombFilterBase(float fMaxDelayLengthInS, float fSampleRateInHz
 		m_fSampleRateInHz(fSampleRateInHz),
 		m_iNumChannels(iNumChannels),
 		m_fGainValue(0),
-		m_fDelayValueInS(0),
-		m_iDelayValueInSamples(0)
+		m_fDelayValueInS(0)
 {
-	m_iMaxDelayLengthInSamples = convertSecondsToSamples(fMaxDelayLengthInS);
+	int m_iMaxDelayLengthInSamples = convertSecondsToSamples(fMaxDelayLengthInS);
 	m_fDelayLine = new CRingBuffer<float>*[iNumChannels];
 	for (int channel = 0; channel < iNumChannels; channel++)
 		m_fDelayLine[channel] = new CRingBuffer<float>(m_iMaxDelayLengthInSamples);
@@ -24,6 +23,37 @@ CCombFilterBase::~CCombFilterBase()
 		delete[] m_fDelayLine[channel];
 	delete[] m_fDelayLine;
 	m_fDelayLine = 0;
+}
+
+Error_t CCombFilterBase::setParam(FilterParam_t eParam, float fParamValue)
+{
+	switch (eParam)
+	{
+	case FilterParam_t::kParamDelay:
+		return setDelayValue(fParamValue);
+	case FilterParam_t::kParamGain:
+		return setGainValue(fParamValue);
+	default:
+		return Error_t::kFunctionInvalidArgsError;
+	}
+}
+
+float CCombFilterBase::getParam(FilterParam_t eParam) const
+{
+	switch (eParam)
+	{
+	case FilterParam_t::kParamDelay:
+		return m_fDelayValueInS;
+	case FilterParam_t::kParamGain:
+		return m_fGainValue;
+	default:
+		return -1;
+	}
+}
+
+int CCombFilterBase::convertSecondsToSamples(float fDelayValue) const
+{
+	return static_cast<int>(fDelayValue * m_fSampleRateInHz);
 }
 
 Error_t CCombFilterBase::setGainValue(float fGainValue)
@@ -41,28 +71,13 @@ Error_t CCombFilterBase::setDelayValue(float fDelayValue)
 		return Error_t::kFunctionInvalidArgsError;
 
 	m_fDelayValueInS = fDelayValue;
-	m_iDelayValueInSamples = convertSecondsToSamples(fDelayValue);
+	int m_iDelayValueInSamples = convertSecondsToSamples(fDelayValue);
 	for (int channel = 0; channel < m_iNumChannels; channel++)
 	{
 		int iCurrentReadIdx = m_fDelayLine[channel]->getReadIdx();
 		m_fDelayLine[channel]->setWriteIdx(iCurrentReadIdx + m_iDelayValueInSamples);
 	}
 	return Error_t::kNoError;
-}
-
-float CCombFilterBase::getGainValue() const
-{
-	return m_fGainValue;
-}
-
-float CCombFilterBase::getDelayValue() const
-{
-	return m_fDelayValueInS;
-}
-
-int CCombFilterBase::convertSecondsToSamples(float fDelayValue) const
-{
-	return static_cast<int>(fDelayValue * m_fSampleRateInHz);
 }
 //=================================
 
