@@ -216,14 +216,16 @@ void     showClInfo()
     return;
 }
 
-void test1()
+bool test1()
 {
+    //If fPeriod * fSampleRate is a whole number, then all values will be practically zero for all samples once the delay comes in.
+    //For this set of values, all values will be zero starting at sample 441.
     const int iNumChannels = 1;
-    const int iNumSamples = 500;
-    const float fSampleRate = 10000;
-    const int iInputFreq = 200;
+    const int iNumSamples = 10000;
+    const float fSampleRate = 44100;
+    const int iInputFreq = 100;
     const float fPeriod = 1.0f / iInputFreq;
-    const float fHalfPeriod = fPeriod / 2.0f;
+    const int iSampleDelayComesIn = fPeriod * fSampleRate;
 
     float** ppfInputBuffer = new float* [iNumChannels];
     float** ppfOutputBuffer = new float* [iNumChannels];
@@ -240,11 +242,20 @@ void test1()
     CCombFilterIf* phCombFilter = 0;
     CCombFilterIf::create(phCombFilter);
     phCombFilter->init(CCombFilterIf::CombFilterType_t::kCombFIR, 1, fSampleRate, iNumChannels);
-    phCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, fHalfPeriod);
-    phCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, 1);
+    phCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, fPeriod);
+    phCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, -1);
     phCombFilter->process(ppfInputBuffer, ppfOutputBuffer, iNumSamples);
 
-    displayIOBuffers(ppfInputBuffer, ppfOutputBuffer, iNumChannels, iNumSamples);
+    bool passed = true;
+    for (int channel = 0; channel < iNumChannels; channel++)
+        for (int sample = iSampleDelayComesIn; sample < iNumSamples; sample++)
+        {
+            if (ppfOutputBuffer[channel][sample] > 1E-4)
+            {
+                passed = false;
+            }
+                
+        }
 
     CCombFilterIf::destroy(phCombFilter);
     for (int channel = 0; channel < iNumChannels; channel++)
@@ -255,6 +266,7 @@ void test1()
     delete[] ppfInputBuffer;
     delete[] ppfOutputBuffer;
         
+    return passed;
 }
 
 void runTests()
