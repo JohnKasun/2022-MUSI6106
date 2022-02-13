@@ -56,14 +56,19 @@ int main(int argc, char* argv[])
     else
     {
         sInputFilePath = argv[1];
-        sOutputFilePath = sInputFilePath + ".txt";
+        sOutputFilePath = sInputFilePath + "FIR.txt";
 
         std::string sFilterType = argv[2];
         toLower(sFilterType);
         if (sFilterType == "fir")
             eFilterType = CCombFilterIf::CombFilterType_t::kCombFIR;
         else if (sFilterType == "iir")
-            eFilterType == CCombFilterIf::CombFilterType_t::kCombIIR;
+            eFilterType = CCombFilterIf::CombFilterType_t::kCombIIR;
+        else
+        {
+            cout << "Invalid filter type...";
+            return -1;
+        }
 
         fMaxDelay = atof(argv[3]);
         fDelayParam = atof(argv[4]);
@@ -195,7 +200,7 @@ void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer,
 void toLower(std::string &sStringToLower)
 {
     for (char& letter : sStringToLower)
-        tolower(letter);
+        letter = tolower(letter);
 }
 
 void     showClInfo()

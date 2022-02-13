@@ -92,8 +92,8 @@ Error_t CCombFilterFIR::process(float** ppfAudioInputBuffer, float** ppfAudioOut
 		for (int sample = 0; sample < iNumberOfFrames; sample++)
 		{
 			float fCurrentSample = ppfAudioInputBuffer[channel][sample];
-			ppfAudioOutputBuffer[channel][sample] = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
 			fCurrentDelayLine->putPostInc(fCurrentSample);
+			ppfAudioOutputBuffer[channel][sample] = fCurrentSample + (m_fGainValue * fCurrentDelayLine->getPostInc());
 		}
 	}
 	return Error_t::kNoError;
@@ -110,8 +110,8 @@ Error_t CCombFilterIIR::process(float** ppfAudioInputBuffer, float** ppfAudioOut
 		for (int sample = 0; sample < iNumberOfFrames; sample++)
 		{
 			float fNewOutput = ppfAudioInputBuffer[channel][sample] + (m_fGainValue * fCurrentDelayLine->getPostInc());
-			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
 			fCurrentDelayLine->putPostInc(fNewOutput);
+			ppfAudioOutputBuffer[channel][sample] = fNewOutput;
 		}
 	}
 	return Error_t::kNoError;
