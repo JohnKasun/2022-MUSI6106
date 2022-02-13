@@ -2,6 +2,8 @@
 #include <iostream>
 #include <ctime>
 #include <cctype>
+#define _USE_MATH_DEFINES
+#include "math.h"
 
 #include "MUSI6106Config.h"
 
@@ -15,6 +17,7 @@ using std::endl;
 void    showClInfo ();
 void    displayIOBuffers(float**, float**, int, int);
 void    toLower(std::string&);
+void    runTests();
 
 /////////////////////////////////////////////////////////////////////////////////
 // main function
@@ -45,8 +48,9 @@ int main(int argc, char* argv[])
     // parse command line arguments
     if (argc < 2)
     {
-        cout << "Missing audio input path!";
-        return -1;
+        cout << "Missing audio input path! -- running tests...";
+        runTests();
+        return 0;
     }
     else if (argc < 6)
     {
@@ -56,7 +60,7 @@ int main(int argc, char* argv[])
     else
     {
         sInputFilePath = argv[1];
-        sOutputFilePath = sInputFilePath + "FIR.txt";
+        sOutputFilePath = sInputFilePath + ".txt";
 
         std::string sFilterType = argv[2];
         toLower(sFilterType);
@@ -172,7 +176,7 @@ void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer,
 {
     static int iNumBlock = 0;
 
-    std::cout << "===Block " << ++iNumBlock << "=============================" << std::endl;
+    std::cout << "\n===Block " << ++iNumBlock << "=============================" << std::endl;
     std::cout << "Input: " << std::endl;
     for (int channel = 0; channel < iNumChannels; channel++)
     {
@@ -210,5 +214,51 @@ void     showClInfo()
     cout  << endl;
 
     return;
+}
+
+void test1()
+{
+    const int iNumChannels = 1;
+    const int iNumSamples = 500;
+    const float fSampleRate = 10000;
+    const int iInputFreq = 200;
+    const float fPeriod = 1.0f / iInputFreq;
+    const float fHalfPeriod = fPeriod / 2.0f;
+
+    float** ppfInputBuffer = new float* [iNumChannels];
+    float** ppfOutputBuffer = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+    {
+        ppfInputBuffer[i] = new float[iNumSamples] {};
+        ppfOutputBuffer[i] = new float[iNumSamples] {};
+    }
+
+    for (int channel = 0; channel < iNumChannels; channel++)
+        for (int sample = 0; sample < iNumSamples; sample++)
+            ppfInputBuffer[channel][sample] = sinf(2 * M_PI * iInputFreq * sample / fSampleRate);
+
+    CCombFilterIf* phCombFilter = 0;
+    CCombFilterIf::create(phCombFilter);
+    phCombFilter->init(CCombFilterIf::CombFilterType_t::kCombFIR, 1, fSampleRate, iNumChannels);
+    phCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamDelay, fHalfPeriod);
+    phCombFilter->setParam(CCombFilterIf::FilterParam_t::kParamGain, 1);
+    phCombFilter->process(ppfInputBuffer, ppfOutputBuffer, iNumSamples);
+
+    displayIOBuffers(ppfInputBuffer, ppfOutputBuffer, iNumChannels, iNumSamples);
+
+    CCombFilterIf::destroy(phCombFilter);
+    for (int channel = 0; channel < iNumChannels; channel++)
+    {
+        delete[] ppfInputBuffer[channel];
+        delete[] ppfOutputBuffer[channel];
+    }
+    delete[] ppfInputBuffer;
+    delete[] ppfOutputBuffer;
+        
+}
+
+void runTests()
+{
+    test1();
 }
 
