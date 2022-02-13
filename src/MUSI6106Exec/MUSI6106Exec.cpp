@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
     else
     {
         sInputFilePath = argv[1];
+
         sOutputFilePath = sInputFilePath + ".txt";
 
         std::string sFilterType = argv[2];
@@ -189,11 +190,11 @@ bool test5();
 
 void runTests()
 {
-    test1();
+    bool test1passed = test1();
     test2();
-    test3();
-    test4();
-    test5();
+    bool test3passed = test3();
+    bool test4passed = test4();
+    bool test5passed = test5();
 }
 
 //Display Input and Output Audio Buffers
@@ -321,7 +322,7 @@ void test2()
 {
     const float fTwoPi = 2.0f * M_PI;
     const int iNumChannels = 2;
-    const int iNumSamples = 10000;
+    const int iNumSamples = 1000;
     const float fSampleRate = 40000;
     const int iInputFreq = 1000;
     const float fPeriod = 1.0f / iInputFreq;
