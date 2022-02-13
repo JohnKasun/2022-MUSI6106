@@ -220,8 +220,9 @@ bool test1()
 {
     //If fPeriod * fSampleRate is a whole number, then all values will be practically zero for all samples once the delay comes in.
     //For this set of values, all values will be zero starting at sample 441.
-    const int iNumChannels = 1;
-    const int iNumSamples = 10000;
+    const float fTwoPi = 2.0f * M_PI;
+    const int iNumChannels = 2;
+    const int iNumSamples = 1000000;
     const float fSampleRate = 44100;
     const int iInputFreq = 100;
     const float fPeriod = 1.0f / iInputFreq;
@@ -236,8 +237,17 @@ bool test1()
     }
 
     for (int channel = 0; channel < iNumChannels; channel++)
+    {
+        float fAngleDelta = fTwoPi * iInputFreq / fSampleRate;
+        float fCurrentAngle = 0.0f;
         for (int sample = 0; sample < iNumSamples; sample++)
-            ppfInputBuffer[channel][sample] = sinf(2 * M_PI * iInputFreq * sample / fSampleRate);
+        {
+            ppfInputBuffer[channel][sample] = sinf(fCurrentAngle*sample);
+        }
+        while (fCurrentAngle >= fTwoPi)
+            fCurrentAngle -= fTwoPi;
+    }
+            
 
     CCombFilterIf* phCombFilter = 0;
     CCombFilterIf::create(phCombFilter);
@@ -250,7 +260,7 @@ bool test1()
     for (int channel = 0; channel < iNumChannels; channel++)
         for (int sample = iSampleDelayComesIn; sample < iNumSamples; sample++)
         {
-            if (ppfOutputBuffer[channel][sample] > 1E-4)
+            if (ppfOutputBuffer[channel][sample] > 1E-6)
             {
                 passed = false;
             }
