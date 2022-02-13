@@ -26,7 +26,9 @@ public:
         kCombFIR,           //!< finite impulse response filter
         kCombIIR,           //!< infinite impulse response filter
 
-        kNumFilterTypes
+        kNumFilterTypes,
+
+        kInvalidType
     };
 
     /*! list of parameters for the comb filters */
