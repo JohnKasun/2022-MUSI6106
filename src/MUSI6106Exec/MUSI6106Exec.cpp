@@ -182,45 +182,17 @@ bool test5();
 
 void runTests()
 {
-    bool test1passed = test1();
+    if (test1()) std::cout << "\nTest 1 passed" << std::endl;
     test2();
-    bool test3passed = test3();
-    bool test4passed = test4();
-    bool test5passed = test5();
-}
-
-//Display Input and Output Audio Buffers
-void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumChannels, int iNumSamples)
-{
-    std::cout << "\n=======================================" << std::endl;
-    std::cout << "Input: " << std::endl;
-    for (int channel = 0; channel < iNumChannels; channel++)
-    {
-        std::cout << "\tChannel " << channel << ": [";
-        for (int sample = 0; sample < iNumSamples; sample++)
-        {
-            std::cout << ppfAudioInputBuffer[channel][sample] << " ";
-        }
-        std::cout << "]" << std::endl;
-    }
-
-    std::cout << "Output: " << std::endl;
-    for (int channel = 0; channel < iNumChannels; channel++)
-    {
-        std::cout << "\tChannel " << channel << ": [";
-        for (int sample = 0; sample < iNumSamples; sample++)
-        {
-            std::cout << ppfAudioOutputBuffer[channel][sample] << " ";
-        }
-        std::cout << "]" << std::endl;
-    }
-    std::cout << "=======================================" << std::endl;
+    if (test3()) std::cout << "Test 3 passed" << std::endl;
+    if (test4()) std::cout << "Test 4 passed" << std::endl;
+    if (test5()) std::cout << "Test 5 passed\n" << std::endl;
+    
 }
 
 //Displays single Audio Buffer
 void displayBuffer(float** ppfAudioBuffer, int iNumChannels, int iNumSamples)
 {
-    std::cout << "Buffer: " << std::endl;
     for (int channel = 0; channel < iNumChannels; channel++)
     {
         std::cout << "\tChannel " << channel << ": [";
@@ -231,6 +203,16 @@ void displayBuffer(float** ppfAudioBuffer, int iNumChannels, int iNumSamples)
         std::cout << "]" << std::endl;
     }
     std::cout << "=======================================" << std::endl;
+}
+
+void displayBufferAndName(float** ppfAudioBuffer, int iNumChannels, int iNumSamples, const std::string& bufferName) {
+    std::cout << "\n" << bufferName << ": " << std::endl;
+    displayBuffer(ppfAudioBuffer, iNumChannels, iNumSamples);
+}
+
+void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumChannels, int iNumSamples) {
+    displayBufferAndName(ppfAudioInputBuffer, iNumChannels, iNumSamples, "Input");
+    displayBufferAndName(ppfAudioOutputBuffer, iNumChannels, iNumSamples, "Output");
 }
 
 //Converts string to lowercase
