@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     float **ppfAudioData = 0;
 
     CAudioFileIf *phAudioFile = 0;
-    std::fstream hOutputFile;
+    CAudioFileIf* phAudioOutFile = 0;
     CAudioFileIf::FileSpec_t stFileSpec;
 
     CCombFilterIf* phCombFilter = 0;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     {
         sInputFilePath = argv[1];
 
-        sOutputFilePath = sInputFilePath + ".txt";
+        sOutputFilePath = sInputFilePath + "Filtered.wav";
 
         std::string sFilterType = argv[2];
         toLower(sFilterType);
@@ -93,12 +93,13 @@ int main(int argc, char* argv[])
     phAudioFile->getFileSpec(stFileSpec);
 
     //////////////////////////////////////////////////////////////////////////////
-    // open the output text file
-    hOutputFile.open(sOutputFilePath.c_str(), std::ios::out);
-    if (!hOutputFile.is_open())
+    // open the output wav file
+    CAudioFileIf::create(phAudioOutFile);
+    phAudioOutFile->openFile(sOutputFilePath, CAudioFileIf::kFileWrite, &stFileSpec);
+    if (!phAudioOutFile->isOpen())
     {
-        cout << "Text file open error!";
-        CAudioFileIf::destroy(phAudioFile);
+        cout << "Output Wave file open error!";
+        CAudioFileIf::destroy(phAudioOutFile);
         return -1;
     }
 
@@ -111,13 +112,13 @@ int main(int argc, char* argv[])
     if (ppfAudioData == 0)
     {
         CAudioFileIf::destroy(phAudioFile);
-        hOutputFile.close();
+        CAudioFileIf::destroy(phAudioOutFile);
         return -1;
     }
     if (ppfAudioData[0] == 0)
     {
         CAudioFileIf::destroy(phAudioFile);
-        hOutputFile.close();
+        CAudioFileIf::destroy(phAudioOutFile);
         return -1;
     }
 
@@ -141,18 +142,9 @@ int main(int argc, char* argv[])
         // read data (iNumOfFrames might be updated!)
         phAudioFile->readData(ppfAudioData, iNumFrames);
         phCombFilter->process(ppfAudioData, ppfAudioData, iNumFrames);
+        phAudioOutFile->writeData(ppfAudioData, iNumFrames);
 
         cout << "\r" << "reading and writing";
-
-        // write
-        for (int i = 0; i < iNumFrames; i++)
-        {
-            for (int c = 0; c < stFileSpec.iNumChannels; c++)
-            {
-                hOutputFile << ppfAudioData[c][i] << "\t";
-            }
-            hOutputFile << endl;
-        }
     }
 
     cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
@@ -161,7 +153,7 @@ int main(int argc, char* argv[])
     // clean-up (close files and free memory)
     CAudioFileIf::destroy(phAudioFile);
     CCombFilterIf::destroy(phCombFilter);
-    hOutputFile.close();
+    CAudioFileIf::destroy(phAudioOutFile);
 
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
         delete[] ppfAudioData[i];
@@ -190,45 +182,17 @@ bool test5();
 
 void runTests()
 {
-    bool test1passed = test1();
+    if (test1()) std::cout << "\nTest 1 passed" << std::endl;
     test2();
-    bool test3passed = test3();
-    bool test4passed = test4();
-    bool test5passed = test5();
-}
-
-//Display Input and Output Audio Buffers
-void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumChannels, int iNumSamples)
-{
-    std::cout << "\n=======================================" << std::endl;
-    std::cout << "Input: " << std::endl;
-    for (int channel = 0; channel < iNumChannels; channel++)
-    {
-        std::cout << "\tChannel " << channel << ": [";
-        for (int sample = 0; sample < iNumSamples; sample++)
-        {
-            std::cout << ppfAudioInputBuffer[channel][sample] << " ";
-        }
-        std::cout << "]" << std::endl;
-    }
-
-    std::cout << "Output: " << std::endl;
-    for (int channel = 0; channel < iNumChannels; channel++)
-    {
-        std::cout << "\tChannel " << channel << ": [";
-        for (int sample = 0; sample < iNumSamples; sample++)
-        {
-            std::cout << ppfAudioOutputBuffer[channel][sample] << " ";
-        }
-        std::cout << "]" << std::endl;
-    }
-    std::cout << "=======================================" << std::endl;
+    if (test3()) std::cout << "Test 3 passed" << std::endl;
+    if (test4()) std::cout << "Test 4 passed" << std::endl;
+    if (test5()) std::cout << "Test 5 passed\n" << std::endl;
+    
 }
 
 //Displays single Audio Buffer
 void displayBuffer(float** ppfAudioBuffer, int iNumChannels, int iNumSamples)
 {
-    std::cout << "Buffer: " << std::endl;
     for (int channel = 0; channel < iNumChannels; channel++)
     {
         std::cout << "\tChannel " << channel << ": [";
@@ -239,6 +203,16 @@ void displayBuffer(float** ppfAudioBuffer, int iNumChannels, int iNumSamples)
         std::cout << "]" << std::endl;
     }
     std::cout << "=======================================" << std::endl;
+}
+
+void displayBufferAndName(float** ppfAudioBuffer, int iNumChannels, int iNumSamples, const std::string& bufferName) {
+    std::cout << "\n" << bufferName << ": " << std::endl;
+    displayBuffer(ppfAudioBuffer, iNumChannels, iNumSamples);
+}
+
+void displayIOBuffers(float** ppfAudioInputBuffer, float** ppfAudioOutputBuffer, int iNumChannels, int iNumSamples) {
+    displayBufferAndName(ppfAudioInputBuffer, iNumChannels, iNumSamples, "Input");
+    displayBufferAndName(ppfAudioOutputBuffer, iNumChannels, iNumSamples, "Output");
 }
 
 //Converts string to lowercase
