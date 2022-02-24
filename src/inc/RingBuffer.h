@@ -64,13 +64,15 @@ public:
     */
     T get(float fOffset = 0) const
     {
-        float rawIndexOffset = m_iReadIdx + fOffset;
-        int roundIndexOffset = static_cast<int>( (fOffset > 0) ? ceil(rawIndexOffset) : floor(rawIndexOffset) );
-        wrapAround(roundIndexOffset);
-
-        float val = m_ptBuff[m_iReadIdx] + ((rawIndexOffset - m_iReadIdx) * (m_ptBuff[roundIndexOffset] - m_ptBuff[m_iReadIdx]) / (roundIndexOffset - m_iReadIdx));
-
-        return val;
+        float fValue = m_ptBuff[m_iReadIdx];
+        if (fOffset)
+        {
+            float rawIndexOffset = m_iReadIdx + fOffset;
+            wrapAround(rawIndexOffset);
+            int roundIndexOffset = static_cast<int>((fOffset > 0) ? ceil(rawIndexOffset) : floor(rawIndexOffset));
+            fValue += ((rawIndexOffset - m_iReadIdx) * (m_ptBuff[roundIndexOffset] - m_ptBuff[m_iReadIdx]) / (roundIndexOffset - m_iReadIdx));
+        }
+        return fValue;
     }
 
     /*! set buffer content and indices to 0
@@ -146,11 +148,12 @@ private:
         iIdx = (iIdx + iOffset) % m_iBuffLength;
     };
 
-    void wrapAround(int& iIdx) const
+    void wrapAround(float& fIdx) const
     {
-        while (iIdx < 0)
-            iIdx += m_iBuffLength;
-        iIdx %= m_iBuffLength;
+        while (fIdx < 0)
+            fIdx += m_iBuffLength;
+        while (fIdx >= m_iBuffLength)
+            fIdx -= m_iBuffLength;
     }
 
     int m_iBuffLength,      //!< length of the internal buffer

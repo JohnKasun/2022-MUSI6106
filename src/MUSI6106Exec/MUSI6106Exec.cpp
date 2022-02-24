@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
     //}
 
     pCRingBuff->setReadIdx(4);
-    pCRingBuff->get(-4);
+    pCRingBuff->get();
 
     // all done
     return 0;
