@@ -64,18 +64,11 @@ public:
     */
     T get(float fOffset = 0) const
     {
-        float rawIndex = m_iReadIdx + fOffset;
+        float rawIndexOffset = m_iReadIdx + fOffset;
+        int roundIndexOffset = static_cast<int>( (fOffset > 0) ? ceil(rawIndexOffset) : floor(rawIndexOffset) );
+        wrapAround(roundIndexOffset);
 
-        int index0 = m_iReadIdx;
-        int index1 = 0;
-        if (fOffset > 0)
-            index1 = static_cast<int>(ceil(rawIndex));
-        else
-            index1 = static_cast<int>(floor(rawIndex));
-
-        wrapAround(index1);
-
-        float val = m_ptBuff[index0] + ((rawIndex - index0) * (m_ptBuff[index1] - m_ptBuff[index0]) / (index1 - index0));
+        float val = m_ptBuff[m_iReadIdx] + ((rawIndexOffset - m_iReadIdx) * (m_ptBuff[roundIndexOffset] - m_ptBuff[m_iReadIdx]) / (roundIndexOffset - m_iReadIdx));
 
         return val;
     }
