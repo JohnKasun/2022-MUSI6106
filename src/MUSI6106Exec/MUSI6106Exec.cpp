@@ -36,8 +36,8 @@ int main(int argc, char* argv[])
     //    pCRingBuff->putPostInc(1.F*i);
     //}
 
-    pCRingBuff->setReadIdx(4);
-    pCRingBuff->get();
+    pCRingBuff->setReadIdx(0);
+    pCRingBuff->get(5);
 
     // all done
     return 0;
