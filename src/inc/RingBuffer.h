@@ -62,9 +62,22 @@ public:
     /*! return the value at the current read index
     \return float the value from the read index
     */
-    T get() const
+    T get(float fOffset = 0) const
     {
-        return m_ptBuff[m_iReadIdx];
+        float rawIndex = m_iReadIdx + fOffset;
+
+        int index0 = m_iReadIdx;
+        int index1 = 0;
+        if (fOffset > 0)
+            index1 = static_cast<int>(ceil(rawIndex));
+        else
+            index1 = static_cast<int>(floor(rawIndex));
+
+        wrapAround(index1);
+
+        float val = m_ptBuff[index0] + ((rawIndex - index0) * (m_ptBuff[index1] - m_ptBuff[index0]) / (index1 - index0));
+
+        return val;
     }
 
     /*! set buffer content and indices to 0
@@ -139,6 +152,13 @@ private:
         }
         iIdx = (iIdx + iOffset) % m_iBuffLength;
     };
+
+    void wrapAround(int& iIdx) const
+    {
+        while (iIdx < 0)
+            iIdx += m_iBuffLength;
+        iIdx %= m_iBuffLength;
+    }
 
     int m_iBuffLength,      //!< length of the internal buffer
         m_iReadIdx,         //!< current read index
