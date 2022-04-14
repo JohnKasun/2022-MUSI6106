@@ -6,6 +6,10 @@
 
 #include "ErrorDef.h"
 
+class CFastConvBase;
+class CFastConvTime;
+class CFastConvFreq;
+
 /*! \brief interface for fast convolution
 */
 class CFastConv
@@ -48,6 +52,32 @@ public:
     \return Error_t
     */
     Error_t flushBuffer(float* pfOutputBuffer);
+
+private:
+
+    CFastConvBase* m_pCCFastConvBase = 0;
+
+};
+
+class CFastConvBase
+{
+public:
+
+private:
+
+};
+
+class CFastConvTime : public CFastConvBase
+{
+public:
+
+private:
+
+};
+
+class CFastConvFreq : public CFastConvBase
+{
+public:
 
 private:
 
