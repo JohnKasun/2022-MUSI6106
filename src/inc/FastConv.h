@@ -5,6 +5,8 @@
 #pragma once
 
 #include "ErrorDef.h"
+#include "Vector.h"
+#include "Util.h"
 
 class CFastConvBase;
 class CFastConvTime;
@@ -53,6 +55,11 @@ public:
     */
     Error_t flushBuffer(float* pfOutputBuffer);
 
+    /*! return the 'tail' length. Should be called prior to 'flushBuffer(...)'
+    \return int
+    */
+    int getTailLength() const;
+
 private:
 
     CFastConvBase* m_pCCFastConvBase = 0;
@@ -63,13 +70,29 @@ class CFastConvBase
 {
 public:
 
+    CFastConvBase(float* pfIr, int iLengthOfIr);
+    virtual ~CFastConvBase();
+
+    virtual Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) = 0;
+    Error_t flushBuffer(float* pfOutputBuffer);
+    int getTailLength() const;
+
 private:
+
+    float* m_pfIr = 0;
+    int m_iLengthOfIr = 0;
+    int m_iLengthOfTail = 0;
 
 };
 
 class CFastConvTime : public CFastConvBase
 {
 public:
+
+    CFastConvTime(float* pfIr, int iLengthOfIr);
+    ~CFastConvTime();
+
+    Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
 
 private:
 
@@ -78,6 +101,11 @@ private:
 class CFastConvFreq : public CFastConvBase
 {
 public:
+
+    CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength);
+    ~CFastConvFreq();
+
+    Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
 
 private:
 
