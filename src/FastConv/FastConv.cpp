@@ -126,6 +126,15 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
         }
     }
 
+
+    for (int n = 0; n < m_iLengthOfTail; n++)
+    {
+        for (int k = 0; k < (m_iLengthOfIr - (n + 1)) && k < iLengthOfBuffers; k++)
+        {
+            m_pfTail[n] += pfInputBuffer[iLengthOfBuffers - 1 - k] * m_pfIr[k + (n + 1)];
+        }
+    }
+
 }
 //====================================================================
 
