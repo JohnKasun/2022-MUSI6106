@@ -41,6 +41,7 @@ Error_t CFastConv::reset()
         delete m_pCCFastConvBase;
         m_pCCFastConvBase = 0;
     }
+    return Error_t::kNoError;
 }
 
 Error_t CFastConv::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
@@ -63,7 +64,7 @@ Error_t CFastConv::flushBuffer(float* pfOutputBuffer)
 }
 int CFastConv::getTailLength() const
 {
-    m_pCCFastConvBase->getTailLength();
+    return m_pCCFastConvBase->getTailLength();
 }
 //====================================================================
 
@@ -134,6 +135,8 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
             m_pfTail[n] += pfInputBuffer[iLengthOfBuffers - 1 - k] * m_pfIr[k + (n + 1)];
         }
     }
+
+    return Error_t::kNoError;
 
 }
 //====================================================================

@@ -74,8 +74,28 @@ namespace fastconv_test {
         float* m_pfGroundTail = 0;
     };
 
-    TEST_F(FastConv, EmptyTest)
+    TEST_F(FastConv, Identity)
     {
+
+        int iInputLength = 52;
+        int iIrLength = 51;
+        int iOutputLength = iInputLength;
+
+        m_pfInput = new float[iInputLength] {};
+        m_pfIr = new float[iIrLength] {};
+        m_pfTestOutput = new float[iOutputLength] {};
+        m_pfGroundOutput = new float[iOutputLength] {};
+
+        m_pfInput[3] = 1;
+        for (int i = 0; i < iIrLength; i++)
+            m_pfIr[i] = static_cast<float>(rand() % 10);
+        CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
+
+        m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
+        m_pCFastConv->reset();
+
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
     }
 }
 
