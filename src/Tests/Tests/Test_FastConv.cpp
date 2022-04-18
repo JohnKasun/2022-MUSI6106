@@ -77,7 +77,7 @@ namespace fastconv_test {
     TEST_F(FastConv, Identity)
     {
 
-        int iInputLength = 52;
+        int iInputLength = 10;
         int iIrLength = 51;
         int iOutputLength = iInputLength;
 
@@ -162,7 +162,7 @@ namespace fastconv_test {
         m_pCFastConv->reset();
 
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 0);
-       // CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
+        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
     }
 }
 

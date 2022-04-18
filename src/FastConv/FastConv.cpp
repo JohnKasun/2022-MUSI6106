@@ -115,11 +115,18 @@ CFastConvTime::~CFastConvTime()
 
 Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
 {
+
+    // Copy as many tail values as possible into output buffer
     int iMinLength = std::min<int>(m_iLengthOfTail, iLengthOfBuffers);
     CVectorFloat::copy(pfOutputBuffer, m_pfTail, iMinLength);
-    CVectorFloat::moveInMem(m_pfTail, 0, iMinLength - 1, m_iLengthOfTail - iMinLength);
+
+    // Move remaining tail values up to front of buffer
+    CVectorFloat::moveInMem(m_pfTail, 0, iMinLength, m_iLengthOfTail - iMinLength);
+
+    // Set extra values at end of tail to zero
     CVectorFloat::setZero(m_pfTail + m_iLengthOfTail - iMinLength, iMinLength);
 
+    // Do convolution for the amount that will fit in IO buffers
     for (int n = 0; n < iLengthOfBuffers; n++)
     {
         for (int k = 0; k < m_iLengthOfIr && k <= n; k++)
@@ -128,7 +135,7 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
         }
     }
 
-
+    // Complete convolution and add values to current tail
     for (int n = 0; n < m_iLengthOfTail; n++)
     {
         for (int k = 0; k < (m_iLengthOfIr - (n + 1)) && k < iLengthOfBuffers; k++)
