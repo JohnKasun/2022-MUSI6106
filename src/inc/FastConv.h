@@ -77,9 +77,10 @@ public:
     Error_t flushBuffer(float* pfOutputBuffer);
     int getTailLength() const;
 
-private:
+protected:
 
     float* m_pfIr = 0;
+    float* m_pfTail = 0;
     int m_iLengthOfIr = 0;
     int m_iLengthOfTail = 0;
 

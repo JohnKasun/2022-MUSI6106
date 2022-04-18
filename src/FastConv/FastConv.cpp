@@ -1,5 +1,6 @@
 
 #include "FastConv.h"
+#include <algorithm>
 
 CFastConv::CFastConv( void )
 {
@@ -67,19 +68,20 @@ int CFastConv::getTailLength() const
 //====================================================================
 
 //====================================================================
-CFastConvBase::CFastConvBase(float* pfIr, int iLengthOfIr) :
-    m_iLengthOfIr(iLengthOfIr),
-    m_iLengthOfTail(iLengthOfIr - 1)
+CFastConvBase::CFastConvBase(float* pfIr, int iLengthOfIr)
 {
+    m_iLengthOfIr = iLengthOfIr;
     m_pfIr = new float[m_iLengthOfIr] {};
+
     CVector::copy(m_pfIr, pfIr, m_iLengthOfIr);
 }
 
 CFastConvBase::~CFastConvBase()
 {
     delete[] m_pfIr;
+    m_pfIr = 0;
+
     m_iLengthOfIr = 0;
-    m_iLengthOfTail = 0;
 }
 
 Error_t CFastConvBase::flushBuffer(float* pfOutputBuffer)
@@ -97,15 +99,33 @@ int CFastConvBase::getTailLength() const
 CFastConvTime::CFastConvTime(float* pfIr, int iLengthOfIr) :
     CFastConvBase(pfIr, iLengthOfIr)
 {
+    m_iLengthOfTail = iLengthOfIr - 1;
+    m_pfTail = new float[m_iLengthOfTail] {};
 }
 
 CFastConvTime::~CFastConvTime()
 {
+    delete[] m_pfTail;
+    m_pfTail = 0;
+
+    m_iLengthOfTail = 0;
 }
 
 Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
 {
-    return Error_t();
+    int iMinLength = std::min<int>(m_iLengthOfTail, iLengthOfBuffers);
+    CVector::copy(pfOutputBuffer, m_pfTail, iMinLength);
+    CVector::moveInMem(m_pfTail, 0, iMinLength - 1, m_iLengthOfTail - iMinLength);
+    CVector::setZero(m_pfTail + m_iLengthOfTail - iMinLength, iMinLength);
+
+    for (int n = 0; n < iLengthOfBuffers; n++)
+    {
+        for (int k = 0; k < m_iLengthOfIr && k <= n; k++)
+        {
+            pfOutputBuffer[n] += pfInputBuffer[n - k] * m_pfIr[k];
+        }
+    }
+
 }
 //====================================================================
 
