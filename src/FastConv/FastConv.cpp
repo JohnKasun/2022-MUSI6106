@@ -74,7 +74,7 @@ CFastConvBase::CFastConvBase(float* pfIr, int iLengthOfIr)
     m_iLengthOfIr = iLengthOfIr;
     m_pfIr = new float[m_iLengthOfIr] {};
 
-    CVector::copy(m_pfIr, pfIr, m_iLengthOfIr);
+    CVectorFloat::copy(m_pfIr, pfIr, m_iLengthOfIr);
 }
 
 CFastConvBase::~CFastConvBase()
@@ -87,7 +87,8 @@ CFastConvBase::~CFastConvBase()
 
 Error_t CFastConvBase::flushBuffer(float* pfOutputBuffer)
 {
-    return Error_t();
+    CVectorFloat::copy(pfOutputBuffer, m_pfTail, m_iLengthOfTail);
+    return Error_t::kNoError;
 }
 
 int CFastConvBase::getTailLength() const
@@ -115,9 +116,9 @@ CFastConvTime::~CFastConvTime()
 Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
 {
     int iMinLength = std::min<int>(m_iLengthOfTail, iLengthOfBuffers);
-    CVector::copy(pfOutputBuffer, m_pfTail, iMinLength);
-    CVector::moveInMem(m_pfTail, 0, iMinLength - 1, m_iLengthOfTail - iMinLength);
-    CVector::setZero(m_pfTail + m_iLengthOfTail - iMinLength, iMinLength);
+    CVectorFloat::copy(pfOutputBuffer, m_pfTail, iMinLength);
+    CVectorFloat::moveInMem(m_pfTail, 0, iMinLength - 1, m_iLengthOfTail - iMinLength);
+    CVectorFloat::setZero(m_pfTail + m_iLengthOfTail - iMinLength, iMinLength);
 
     for (int n = 0; n < iLengthOfBuffers; n++)
     {
