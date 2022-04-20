@@ -111,28 +111,22 @@ public:
     Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
 
 private:
-    int m_iBlockLength;
-    int m_iFftLength;
-    int m_iNumIrBlocks;
-    
-    int m_iReadBlock;
-    int m_iWriteBlock;
-    int m_iReadIdx;
-    int m_iWriteIdx;
+    int m_iBlockLength = 0;
+    int m_iFftLength = 0;
+    int m_iNumIrBlocks = 0;
     
     CFft* m_pFFT = 0;
 
-    CFft::complex_t* m_pfComplexBuffer;
+    CFft::complex_t* m_pfComplexBuffer = 0;
 
     float* m_pfProcessBuf = 0;
-    float* m_pfFFTReal;
-    float* m_pfFFTImag;
-    float* m_pfFFTRealCurr;
-    float* m_pfFFTImagCurr;
-    float* m_pfIFFT;
+    float* m_pfFFTReal = 0;
+    float* m_pfFFTImag = 0;
+    float* m_pfFFTRealCurr = 0;
+    float* m_pfFFTImagCurr = 0;
 
-    float** m_ppfIRFreqReal;
-    float** m_ppfIRFreqImag;
+    float** m_ppfIRFreqReal = 0;
+    float** m_ppfIRFreqImag = 0;
 
 };
 
