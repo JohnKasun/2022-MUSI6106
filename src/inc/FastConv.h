@@ -112,7 +112,8 @@ public:
 
 private:
     int m_iBlockLength;
-    int m_iNumBlocks;
+    int m_iFftLength;
+    int m_iNumIrBlocks;
     
     int m_iReadBlock;
     int m_iWriteBlock;
@@ -123,6 +124,7 @@ private:
 
     CFft::complex_t* m_pfComplexBuffer;
 
+    float* m_pfProcessBuf = 0;
     float* m_pfFFTReal;
     float* m_pfFFTImag;
     float* m_pfFFTRealCurr;
@@ -131,9 +133,6 @@ private:
 
     float** m_ppfIRFreqReal;
     float** m_ppfIRFreqImag;
-    
-    float* m_pfInputBuffer;
-    float** m_ppfOutputBuffer;
 
 };
 

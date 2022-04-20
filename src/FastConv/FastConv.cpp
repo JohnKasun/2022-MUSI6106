@@ -153,73 +153,54 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
 CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     CFastConvBase(pfIr, iLengthOfIr)
 {
-    CFastConvFreq::m_iBlockLength = iBlockLength;
-    m_iNumBlocks = static_cast<int>(m_iLengthOfIr / static_cast<float>(m_iBlockLength));
-    
-    // index flags
-    m_iReadBlock = m_iNumBlocks - 1;
-    m_iWriteBlock = 0;
-    m_iReadIdx = 0;
-    m_iWriteIdx = 0;
     
     // init fft
     CFft* m_pFFT = 0;
     CFft::createInstance(m_pFFT);
-    m_pFFT->initInstance(2 * m_iBlockLength, 1, CFft::kWindowHann, CFft::kNoWindow);
-    
+    m_pFFT->initInstance(m_iBlockLength, 2, CFft::kWindowHann, CFft::kNoWindow);
+
+    m_iBlockLength = m_pFFT->getLength(CFft::kLengthData);
+    m_iFftLength   = m_pFFT->getLength(CFft::kLengthFft);
+    m_iNumIrBlocks = static_cast<int>(m_iLengthOfIr / static_cast<float>(m_iBlockLength)) + 1;
+
+    // index flags
+    m_iReadBlock = m_iNumIrBlocks - 1;
+    m_iWriteBlock = 0;
+    m_iReadIdx = 0;
+    m_iWriteIdx = 0;
     
     // init real/imag buffers
-    m_pfComplexBuffer = new CFft::complex_t[2 * m_iBlockLength];
+    m_pfComplexBuffer = new CFft::complex_t[m_iFftLength];
 
     m_pfFFTReal = new float[m_iBlockLength + 1];
     m_pfFFTImag = new float[m_iBlockLength + 1];
     m_pfFFTRealCurr = new float[m_iBlockLength + 1];
     m_pfFFTImagCurr = new float[m_iBlockLength + 1];
-    m_pfIFFT = new float[2 * m_iBlockLength];
+    m_pfIFFT = new float[m_iFftLength];
 
-    m_ppfIRFreqReal = new float* [m_iNumBlocks];
-    m_ppfIRFreqImag = new float* [m_iNumBlocks];
-    
-    // input output buffers
-    
-    m_pfInputBuffer = new float[2 * m_iBlockLength];
-    m_ppfOutputBuffer = new float* [m_iNumBlocks];
-    
-    
-    // fft of ir
-    
-    int iAmtIRBlocked = 0;
-    
-    for (int i = 0; i < m_iNumBlocks; i++)
+    m_ppfIRFreqReal = new float* [m_iNumIrBlocks];
+    m_ppfIRFreqImag = new float* [m_iNumIrBlocks];
+    for (int i = 0; i < m_iNumIrBlocks; i++)
     {
         // init ir frequency domain buffers
-        m_ppfIRFreqReal[i] = new float [m_iBlockLength + 1];
-        m_ppfIRFreqImag[i] = new float [m_iBlockLength + 1];
-        
-        for (int j = 0; j < m_iNumBlocks; j++)
-        {
-            iAmtIRBlocked = (i * m_iBlockLength) + j;
-            if (iAmtIRBlocked < iLengthOfIr)
-            {
-                // TODO: not sure whether to use value saved for IR or passed in
-                m_pfIFFT[j] = m_pfIr[iAmtIRBlocked];
-            }
-            else
-            {
-                m_pfIFFT[j] = 0;
-            }
-        }
-        
-        for (int k = m_iBlockLength; k < 2 * m_iBlockLength; i++)
-        {
-            m_pfIFFT[k] = 0;
-        }
-        
-        m_pFFT->doFft(m_pfComplexBuffer, m_pfIFFT);
-        m_pFFT->splitRealImag(m_ppfIRFreqReal[i], m_ppfIRFreqImag[i], m_pfComplexBuffer);
+        m_ppfIRFreqReal[i] = new float[m_iBlockLength + 1];
+        m_ppfIRFreqImag[i] = new float[m_iBlockLength + 1];
+    }
     
-        // init output buffer in same loop
-        m_ppfOutputBuffer[i] = new float [m_iBlockLength + 1];
+    m_pfProcessBuf = new float[m_iFftLength] {};
+    
+    
+    float* cur = m_pfIr;
+    for (int block = 0; block < m_iNumIrBlocks; block++)
+    {
+        CVectorFloat::setZero(m_pfProcessBuf, m_iFftLength);
+        CVectorFloat::copy(m_pfProcessBuf, cur, std::min<int>(m_iBlockLength, m_iLengthOfIr - (block * m_iBlockLength)));
+
+        m_pFFT->doFft(m_pfProcessBuf, m_pfProcessBuf);
+        CVectorFloat::mulC_I(m_pfProcessBuf, m_iFftLength, m_iFftLength);
+        m_pFFT->splitRealImag(m_ppfIRFreqReal[block], m_ppfIRFreqImag[block], m_pfProcessBuf);
+
+        cur += iBlockLength;
     }
     
 }
@@ -227,29 +208,39 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
 CFastConvFreq::~CFastConvFreq()
 {
     
-    delete m_pfFFTReal;
-    delete m_pfFFTImag;
-    delete m_pfFFTImagCurr;
-    delete m_pfIFFT;
-    delete m_pfComplexBuffer;
-    delete m_pfInputBuffer;
+    delete[] m_pfFFTReal;
+    delete[] m_pfFFTImag;
+    delete[] m_pfFFTRealCurr;
+    delete[] m_pfFFTImagCurr;
+    delete[] m_pfIFFT;
+    delete[] m_pfComplexBuffer;
+    delete[] m_pfProcessBuf;
 
-    for (int i = 0; i < m_iNumBlocks; i++)
+    for (int i = 0; i < m_iNumIrBlocks; i++)
     {
-        delete m_ppfIRFreqReal[i];
-        delete m_ppfIRFreqImag[i];
-        delete m_ppfOutputBuffer[i];
+        delete[] m_ppfIRFreqReal[i];
+        delete[] m_ppfIRFreqImag[i];
     }
     
-    delete m_ppfIRFreqReal;
-    delete m_ppfIRFreqImag;
-    delete m_ppfOutputBuffer;
+    delete[] m_ppfIRFreqReal;
+    delete[] m_ppfIRFreqImag;
     
     CFft::destroyInstance(m_pFFT);
 }
 
 Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
 {
+
+    // Copy as many tail values as possible into output buffer
+    int iMinLength = std::min<int>(m_iLengthOfTail, iLengthOfBuffers);
+    CVectorFloat::copy(pfOutputBuffer, m_pfTail, iMinLength);
+
+    // Move remaining tail values up to front of buffer
+    CVectorFloat::moveInMem(m_pfTail, 0, iMinLength, m_iLengthOfTail - iMinLength);
+
+    // Set extra values at end of tail to zero
+    CVectorFloat::setZero(m_pfTail + m_iLengthOfTail - iMinLength, iMinLength);
+
     //TODO: Add asserts/errors
     int iUpdateWriteIdx;
     
