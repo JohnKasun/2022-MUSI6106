@@ -7,6 +7,7 @@
 #include "ErrorDef.h"
 #include "Vector.h"
 #include "Util.h"
+#include "Fft.h"
 
 class CFastConvBase;
 class CFastConvTime;
@@ -84,6 +85,7 @@ protected:
     int m_iLengthOfIr = 0;
     int m_iLengthOfTail = 0;
 
+
 };
 
 class CFastConvTime : public CFastConvBase
@@ -109,6 +111,29 @@ public:
     Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
 
 private:
+    int m_iBlockLength;
+    int m_iNumBlocks;
+    
+    int m_iReadBlock;
+    int m_iWriteBlock;
+    int m_iReadIdx;
+    int m_iWriteIdx;
+    
+    CFft* m_pFFT = 0;
+
+    CFft::complex_t* m_pfComplexBuffer;
+
+    float* m_pfFFTReal;
+    float* m_pfFFTImag;
+    float* m_pfFFTRealCurr;
+    float* m_pfFFTImagCurr;
+    float* m_pfIFFT;
+
+    float** m_ppfIRFreqReal;
+    float** m_ppfIRFreqImag;
+    
+    float* m_pfInputBuffer;
+    float** m_ppfOutputBuffer;
 
 };
 

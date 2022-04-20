@@ -153,13 +153,156 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
 CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     CFastConvBase(pfIr, iLengthOfIr)
 {
+    CFastConvFreq::m_iBlockLength = iBlockLength;
+    m_iNumBlocks = static_cast<int>(m_iLengthOfIr / static_cast<float>(m_iBlockLength));
+    
+    // index flags
+    m_iReadBlock = m_iNumBlocks - 1;
+    m_iWriteBlock = 0;
+    m_iReadIdx = 0;
+    m_iWriteIdx = 0;
+    
+    // init fft
+    CFft* m_pFFT = 0;
+    CFft::createInstance(pFFT);
+    m_pFFT->initInstance(2 * m_iBlockLength, 1, CFft::kWindowHann, CFft::kNoWindow);
+    
+    
+    // init real/imag buffers
+    m_pfComplexBuffer = new CFft::complex_t[2 * m_iBlockLength];
+
+    m_pfFFTReal = new float[m_iBlockLength + 1];
+    m_pfFFTImag = new float[m_iBlockLength + 1];
+    m_pfFFTRealCurr = new float[m_iBlockLength + 1];
+    m_pfFFTImagCurr = new float[m_iBlockLength + 1];
+    m_pfIFFT = new float[2 * m_iBlockLength];
+
+    m_ppfIRFreqReal = new float* [m_iNumBlocks];
+    m_ppfIRFreqImag = new float* [m_iNumBlocks];
+    
+    // input output buffers
+    
+    m_pfInputBuffer = new float[2 * m_iBlockLength];
+    m_ppfOutputBuffer = new float* [m_iNumBlocks];
+    
+    
+    // fft of ir
+    
+    int iAmtIRBlocked = 0;
+    
+    for (int i = 0; i < m_iNumBlocks; i++)
+    {
+        // init ir frequency domain buffers
+        m_ppfIRFreqReal[i] = new float [m_iBlockLength + 1];
+        m_ppfIRFreqImag[i] = new float [m_iBlockLength + 1];
+        
+        for (int j = 0; j < m_iNumBlocks; j++)
+        {
+            iAmtIRBlocked = (i * m_iBlockLength) + j;
+            if (iAmtIRBlocked < iLengthOfIr)
+            {
+                // TODO: not sure whether to use value saved for IR or passed in
+                m_pfIFFT[j] = m_pfIr[iAmtIRBlocked];
+            }
+            else
+            {
+                m_pfIFFT[j] = 0;
+            }
+        }
+        
+        for (int k = m_iBlockLength; k < 2 * m_iBlockLength; i++)
+        {
+            m_pfIFFT[k] = 0;
+        }
+        
+        m_pFFT->doFft(m_pfComplexBuffer, m_pfIFFT);
+        m_pFFT->splitRealImag(m_ppfIRFreqReal[i], m_ppfIRFreqImag[i], m_pfComplexBuffer);
+    
+        // init output buffer in same loop
+        m_ppfOutputBuffer[i] = new float [m_iBlockLength + 1];
+    }
+    
 }
 
 CFastConvFreq::~CFastConvFreq()
 {
+    
+    delete m_pfFFTReal;
+    delete m_pfFFTImag;
+    delete m_pfFFTImagCurr;
+    delete m_pfIFFT;
+    delete m_pfComplexBuffer;
+    delete m_pfInputBuffer;
+
+    for (int i = 0; i < m_iNumBlocks; i++)
+    {
+        delete m_ppfIRFreqReal[i];
+        delete m_ppfIRFreqImag[i];
+        delete m_ppfOutputBuffer[i];
+    }
+    
+    delete m_ppfIRFreqReal;
+    delete m_ppfIRFreqImag;
+    delete m_ppfOutputBuffer;
+    
+    CFft::destroyInstance(m_pFFT);
 }
 
 Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
 {
+    //TODO: Add asserts/errors
+    int iUpdateWriteIdx;
+    
+    for (int i = 0; i < iLengthOfBuffers; i++)
+    {
+        m_pfInputBuffer[m_iWriteIdx + m_iBlockLength] = pfInputBuffer[i];
+        pfOutputBuffer[i] = m_ppfOutputBuffer[m_iReadBlock][m_iWriteIdx];
+        
+        m_iWriteIdx++;
+        
+        if (m_iWriteIdx == m_iBlockLength)
+        {
+            m_iWriteIdx = 0;
+            
+            // not sure if this is necessary
+            for (int j = 0; j < m_iBlockLength; i++)
+            {
+                m_ppfOutputBuffer[m_iReadBlock][j] = 0;
+            }
+            
+            m_pFFT->doFft(m_pfComplexBuffer, m_pfIFFT);
+            m_pFFT->splitRealImag(m_pfFFTRealCurr, m_pfFFTImagCurr, m_pfComplexBuffer);
+            
+            for (int k = 0; k < m_iNumBlocks; i++)
+            {
+                // complex multiplication
+                for (int m = 0; m <= m_iBlockLength; m++)
+                {
+                    m_pfFFTReal[m] = (m_pfFFTRealCurr[m] * m_ppfIRFreqReal[k][m] - m_pfFFTImagCurr[m] * m_ppfIRFreqImag[k][m]) * 2 * m_iBlockLength;
+                    m_pfFFTImag[m] = (m_pfFFTRealCurr[m] * m_ppfIRFreqImag[k][m] + m_pfFFTImagCurr[k] * m_ppfIRFreqReal[k][m]) * 2 * m_iBlockLength;
+                }
+                
+                m_pFFT->mergeRealImag(m_pfComplexBuffer, m_pfFFTReal, m_pfFFTImag);
+                m_pFFT->doInvFft(m_pfIFFT, m_pfComplexBuffer);
+                
+                iUpdateWriteIdx = (m_iWriteBlock + k) % m_iNumBlocks;
+                
+                for (int m = 0; m <= m_iBlockLength; m++)
+                {
+                    m_ppfOutputBuffer[iUpdateWriteIdx][m] += m_pfIFFT[k + m_iBlockLength];
+                }
+            }
+            
+            for (int n = 0; n < m_iBlockLength; n++)
+            {
+                m_pfInputBuffer[n] = m_pfInputBuffer[n + m_iBlockLength];
+            }
+            
+            m_iReadBlock = m_iWriteBlock;
+            m_iWriteBlock = (m_iWriteBlock + 1) % m_iNumBlocks;
+        }
+    }
+    //TODO: Flush buffer for the freqFastConv - I think it is block length + ir length - 1 for the latency
     return Error_t();
 }
+
