@@ -180,7 +180,9 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     }
     
     m_pfProcessBuf = new float[m_iFftLength] {};
-    
+
+    m_iLengthOfTail = m_iBlockLength * m_iNumIrBlocks + m_iBlockLength;
+    m_pfTail = new float[m_iLengthOfTail] {};
     
     float* cur = m_pfIr;
     for (int block = 0; block < m_iNumIrBlocks; block++)
@@ -204,7 +206,7 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
 
 CFastConvFreq::~CFastConvFreq()
 {
-    
+    delete[] m_pfTail;
     delete[] m_pfFFTReal;
     delete[] m_pfFFTImag;
     delete[] m_pfFFTRealCurr;
