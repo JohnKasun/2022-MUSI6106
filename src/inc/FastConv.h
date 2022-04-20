@@ -117,8 +117,6 @@ private:
     
     CFft* m_pFFT = 0;
 
-    CFft::complex_t* m_pfComplexBuffer = 0;
-
     float* m_pfProcessBuf = 0;
     float* m_pfFFTReal = 0;
     float* m_pfFFTImag = 0;

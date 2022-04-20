@@ -153,7 +153,6 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
 CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     CFastConvBase(pfIr, iLengthOfIr)
 {
-    
     // init fft
     CFft::createInstance(m_pFFT);
     m_pFFT->initInstance(iBlockLength, 2, CFft::kWindowHann, CFft::kNoWindow);
@@ -163,8 +162,6 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     m_iNumIrBlocks = static_cast<int>(m_iLengthOfIr / static_cast<float>(m_iBlockLength)) + 1;
     
     // init real/imag buffers
-    m_pfComplexBuffer = new CFft::complex_t[m_iFftLength]{};
-
     m_pfFFTReal = new float[m_iBlockLength + 1]{};
     m_pfFFTImag = new float[m_iBlockLength + 1]{};
     m_pfFFTRealCurr = new float[m_iBlockLength + 1]{};
@@ -179,8 +176,10 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
         m_ppfIRFreqImag[i] = new float[m_iBlockLength + 1]{};
     }
     
+    // Buffer to use for zero padding and for storing fft
     m_pfProcessBuf = new float[m_iFftLength] {};
 
+    // Init tail -- I don't have a good reason for this particular length other than it's what I concluded from inspecting the chart from the provided textbook
     m_iLengthOfTail = m_iBlockLength * m_iNumIrBlocks + m_iBlockLength;
     m_pfTail = new float[m_iLengthOfTail] {};
     
@@ -206,24 +205,30 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
 
 CFastConvFreq::~CFastConvFreq()
 {
-    delete[] m_pfTail;
-    delete[] m_pfFFTReal;
-    delete[] m_pfFFTImag;
-    delete[] m_pfFFTRealCurr;
-    delete[] m_pfFFTImagCurr;
-    delete[] m_pfComplexBuffer;
-    delete[] m_pfProcessBuf;
 
     for (int i = 0; i < m_iNumIrBlocks; i++)
     {
         delete[] m_ppfIRFreqReal[i];
         delete[] m_ppfIRFreqImag[i];
     }
-    
     delete[] m_ppfIRFreqReal;
     delete[] m_ppfIRFreqImag;
-    
+    delete[] m_pfTail;
+    delete[] m_pfFFTReal;
+    delete[] m_pfFFTImag;
+    delete[] m_pfFFTRealCurr;
+    delete[] m_pfFFTImagCurr;
+    delete[] m_pfProcessBuf;
     CFft::destroyInstance(m_pFFT);
+
+    CFft* m_pFFT = 0;
+    float* m_pfProcessBuf = 0;
+    float* m_pfFFTReal = 0;
+    float* m_pfFFTImag = 0;
+    float* m_pfFFTRealCurr = 0;
+    float* m_pfFFTImagCurr = 0;
+    float** m_ppfIRFreqReal = 0;
+    float** m_ppfIRFreqImag = 0;
 }
 
 Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)
@@ -284,10 +289,12 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
             {
                 if (i < iLengthOfBuffers)
                 {
+                    // Fill up as much of output buffer as possible
                     pfOutputBuffer[i] += m_pfProcessBuf[i - iIrBlockStart];
                 }
                 else
                 {
+                    // Transfer leftover values to tail
                     m_pfTail[i - iLengthOfBuffers] += m_pfProcessBuf[i - iIrBlockStart];
                 }
             }
