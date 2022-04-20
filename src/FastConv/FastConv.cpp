@@ -164,7 +164,7 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     
     // init fft
     CFft* m_pFFT = 0;
-    CFft::createInstance(pFFT);
+    CFft::createInstance(m_pFFT);
     m_pFFT->initInstance(2 * m_iBlockLength, 1, CFft::kWindowHann, CFft::kNoWindow);
     
     
