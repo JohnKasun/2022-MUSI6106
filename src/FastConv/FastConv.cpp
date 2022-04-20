@@ -155,9 +155,8 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
 {
     
     // init fft
-    CFft* m_pFFT = 0;
     CFft::createInstance(m_pFFT);
-    m_pFFT->initInstance(m_iBlockLength, 2, CFft::kWindowHann, CFft::kNoWindow);
+    m_pFFT->initInstance(iBlockLength, 2, CFft::kWindowHann, CFft::kNoWindow);
 
     m_iBlockLength = m_pFFT->getLength(CFft::kLengthData);
     m_iFftLength   = m_pFFT->getLength(CFft::kLengthFft);
@@ -238,7 +237,7 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
     // Set extra values at end of tail to zero
     CVectorFloat::setZero(m_pfTail + m_iLengthOfTail - iMinLength, iMinLength);
 
-    int iNumInputBlocks = 1 + iLengthOfBuffers / m_iBlockLength;
+    int iNumInputBlocks = static_cast<int>(iLengthOfBuffers / static_cast<float>(m_iBlockLength)) + 1;
     for (int iInputBlock = 0; iInputBlock < iNumInputBlocks; iInputBlock++)
     {
 

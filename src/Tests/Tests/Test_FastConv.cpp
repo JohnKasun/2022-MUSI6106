@@ -181,9 +181,9 @@ namespace fastconv_test {
             m_pfIr[i] = static_cast<float>(rand() % 10);
         CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
 
-        //m_pCFastConv->init(m_pfIr, iIrLength, 8, CFastConv::ConvCompMode_t::kFreqDomain);
-        //m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
-        //m_pCFastConv->reset();
+        m_pCFastConv->init(m_pfIr, iIrLength, 8, CFastConv::ConvCompMode_t::kFreqDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
+        m_pCFastConv->reset();
 
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
     }
