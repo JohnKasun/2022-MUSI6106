@@ -185,7 +185,7 @@ namespace fastconv_test {
         m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
         m_pCFastConv->reset();
 
-        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 1E-3);
     }
 
     TEST_F(FastConv, FlushBuffer_Freq)
@@ -207,15 +207,15 @@ namespace fastconv_test {
         CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 7, iIrLength - 7);
 
-        //m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
-        //m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
+        m_pCFastConv->init(m_pfIr, iIrLength, 8, CFastConv::ConvCompMode_t::kFreqDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
 
-        //m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
-        //m_pCFastConv->flushBuffer(m_pfTestTail);
-        //m_pCFastConv->reset();
+        m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
+        m_pCFastConv->flushBuffer(m_pfTestTail);
+        m_pCFastConv->reset();
 
-        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
-        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 1E-3);
+        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 1E-3);
     }
 
     TEST_F(FastConv, BlockSize_Freq)
@@ -237,21 +237,20 @@ namespace fastconv_test {
         CVectorFloat::copy(m_pfGroundOutput + 6, m_pfIr, iInputLength - 6);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 9994, iIrLength - 9994);
 
-        //m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
-        //int iOffset = 0;
-        //for (int blockSize : blockSizes)
-        //{
-        //    m_pCFastConv->process(m_pfTestOutput + iOffset, m_pfInput + iOffset, blockSize);
-        //    iOffset += blockSize;
-        //}
+        m_pCFastConv->init(m_pfIr, iIrLength, 512, CFastConv::ConvCompMode_t::kFreqDomain);
+        int iOffset = 0;
+        for (int blockSize : blockSizes)
+        {
+            m_pCFastConv->process(m_pfTestOutput + iOffset, m_pfInput + iOffset, blockSize);
+            iOffset += blockSize;
+        }
 
-        //EXPECT_EQ(iTailLength, m_pCFastConv->getTailLength());
-        //m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
-        //m_pCFastConv->flushBuffer(m_pfTestTail);
-        //m_pCFastConv->reset();
+        m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
+        m_pCFastConv->flushBuffer(m_pfTestTail);
+        m_pCFastConv->reset();
 
-        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 0);
-        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 1E-3);
+        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 1E-3);
     }
 }
 
