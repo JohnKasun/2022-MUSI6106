@@ -222,13 +222,13 @@ CFastConvFreq::~CFastConvFreq()
     CFft::destroyInstance(m_pFFT);
 
     CFft* m_pFFT = 0;
-    float* m_pfProcessBuf = 0;
-    float* m_pfFFTReal = 0;
-    float* m_pfFFTImag = 0;
-    float* m_pfFFTRealCurr = 0;
-    float* m_pfFFTImagCurr = 0;
-    float** m_ppfIRFreqReal = 0;
-    float** m_ppfIRFreqImag = 0;
+    m_pfProcessBuf = 0;
+    m_pfFFTReal = 0;
+    m_pfFFTImag = 0;
+    m_pfFFTRealCurr = 0;
+    m_pfFFTImagCurr = 0;
+    m_ppfIRFreqReal = 0;
+    m_ppfIRFreqImag = 0;
 }
 
 Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers)

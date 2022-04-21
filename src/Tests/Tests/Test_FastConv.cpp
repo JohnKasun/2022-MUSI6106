@@ -237,7 +237,7 @@ namespace fastconv_test {
         CVectorFloat::copy(m_pfGroundOutput + 6, m_pfIr, iInputLength - 6);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 9994, iIrLength - 9994);
 
-        m_pCFastConv->init(m_pfIr, iIrLength, 512, CFastConv::ConvCompMode_t::kFreqDomain);
+        m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kFreqDomain);
         int iOffset = 0;
         for (int blockSize : blockSizes)
         {
