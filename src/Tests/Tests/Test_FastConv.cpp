@@ -8,6 +8,8 @@
 
 #include "gtest/gtest.h"
 
+#include <chrono>
+
 
 namespace fastconv_test {
     void CHECK_ARRAY_CLOSE(float* buffer1, float* buffer2, int iLength, float fTolerance)
@@ -76,7 +78,7 @@ namespace fastconv_test {
 
     TEST_F(FastConv, Identity_Time)
     {
-
+        
         int iInputLength = 10;
         int iIrLength = 51;
         int iOutputLength = iInputLength;
@@ -91,10 +93,16 @@ namespace fastconv_test {
             m_pfIr[i] = static_cast<float>(rand() % 10);
         CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
 
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        
         m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
         m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
         m_pCFastConv->reset();
+        
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
+        std::cout << "IdentityTime = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+        
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
     }
 
@@ -118,13 +126,17 @@ namespace fastconv_test {
         CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 7, iIrLength - 7);
 
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
         m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
         m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
 
         m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
         m_pCFastConv->flushBuffer(m_pfTestTail);
         m_pCFastConv->reset();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
+        std::cout << "FlushBufferTime = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+        
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
         CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
     }
@@ -148,6 +160,8 @@ namespace fastconv_test {
         CVectorFloat::copy(m_pfGroundOutput + 6, m_pfIr, iInputLength - 6);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 9994, iIrLength - 9994);
 
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        
         m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
         int iOffset = 0;
         for (int blockSize : blockSizes)
@@ -160,6 +174,9 @@ namespace fastconv_test {
         m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
         m_pCFastConv->flushBuffer(m_pfTestTail);
         m_pCFastConv->reset();
+        
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "BlockSizeTime = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
 
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 0);
         CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
@@ -167,6 +184,7 @@ namespace fastconv_test {
 
     TEST_F(FastConv, Identity_Freq)
     {
+        
         int iInputLength = 10;
         int iIrLength = 51;
         int iOutputLength = iInputLength;
@@ -181,15 +199,21 @@ namespace fastconv_test {
             m_pfIr[i] = static_cast<float>(rand() % 10);
         CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
 
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        
         m_pCFastConv->init(m_pfIr, iIrLength, 8, CFastConv::ConvCompMode_t::kFreqDomain);
         m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
         m_pCFastConv->reset();
+        
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "IdentityFreq = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
 
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 1E-3);
     }
 
     TEST_F(FastConv, FlushBuffer_Freq)
     {
+        
         int iInputLength = 10;
         int iIrLength = 51;
         int iOutputLength = iInputLength;
@@ -207,12 +231,18 @@ namespace fastconv_test {
         CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 7, iIrLength - 7);
 
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        
         m_pCFastConv->init(m_pfIr, iIrLength, 8, CFastConv::ConvCompMode_t::kFreqDomain);
         m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
 
+        
         m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
         m_pCFastConv->flushBuffer(m_pfTestTail);
         m_pCFastConv->reset();
+        
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "FlushBufferFreq = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
 
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 1E-3);
         CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 1E-3);
@@ -236,7 +266,9 @@ namespace fastconv_test {
             m_pfIr[i] = static_cast<float>(rand() % 10);
         CVectorFloat::copy(m_pfGroundOutput + 6, m_pfIr, iInputLength - 6);
         CVectorFloat::copy(m_pfGroundTail, m_pfIr + 9994, iIrLength - 9994);
-
+        
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        
         m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kFreqDomain);
         int iOffset = 0;
         for (int blockSize : blockSizes)
@@ -248,6 +280,8 @@ namespace fastconv_test {
         m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
         m_pCFastConv->flushBuffer(m_pfTestTail);
         m_pCFastConv->reset();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "BlockSizeFreq = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
 
         CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 1E-3);
         CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 1E-3);
