@@ -72,7 +72,7 @@ int CFastConv::getTailLength() const
 CFastConvBase::CFastConvBase(float* pfIr, int iLengthOfIr)
 {
     m_iLengthOfIr = iLengthOfIr;
-    m_pfIr = new float[m_iLengthOfIr] {};
+    m_pfIr = new float[m_iLengthOfIr];
 
     CVectorFloat::copy(m_pfIr, pfIr, m_iLengthOfIr);
 }
@@ -102,7 +102,8 @@ CFastConvTime::CFastConvTime(float* pfIr, int iLengthOfIr) :
     CFastConvBase(pfIr, iLengthOfIr)
 {
     m_iLengthOfTail = iLengthOfIr - 1;
-    m_pfTail = new float[m_iLengthOfTail] {};
+    m_pfTail = new float[m_iLengthOfTail];
+    CVectorFloat::setZero(m_pfTail, m_iLengthOfTail);
 }
 
 CFastConvTime::~CFastConvTime()
@@ -162,26 +163,27 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
     m_iNumIrBlocks = static_cast<int>(m_iLengthOfIr / static_cast<float>(m_iBlockLength)) + 1;
     
     // init real/imag buffers
-    m_pfFFTReal = new float[m_iBlockLength + 1]{};
-    m_pfFFTImag = new float[m_iBlockLength + 1]{};
-    m_pfFFTRealCurr = new float[m_iBlockLength + 1]{};
-    m_pfFFTImagCurr = new float[m_iBlockLength + 1]{};
+    m_pfFFTReal = new float[m_iBlockLength + 1];
+    m_pfFFTImag = new float[m_iBlockLength + 1];
+    m_pfFFTRealCurr = new float[m_iBlockLength + 1];
+    m_pfFFTImagCurr = new float[m_iBlockLength + 1];
 
-    m_ppfIRFreqReal = new float* [m_iNumIrBlocks] {};
-    m_ppfIRFreqImag = new float* [m_iNumIrBlocks] {};
+    m_ppfIRFreqReal = new float* [m_iNumIrBlocks];
+    m_ppfIRFreqImag = new float* [m_iNumIrBlocks];
     for (int i = 0; i < m_iNumIrBlocks; i++)
     {
         // init ir frequency domain buffers
-        m_ppfIRFreqReal[i] = new float[m_iBlockLength + 1]{};
-        m_ppfIRFreqImag[i] = new float[m_iBlockLength + 1]{};
+        m_ppfIRFreqReal[i] = new float[m_iBlockLength + 1];
+        m_ppfIRFreqImag[i] = new float[m_iBlockLength + 1];
     }
     
     // Buffer to use for zero padding and for storing fft
-    m_pfProcessBuf = new float[m_iFftLength] {};
+    m_pfProcessBuf = new float[m_iFftLength];
 
     // Init tail -- I don't have a good reason for this particular length other than it's what I concluded from inspecting the chart from the provided textbook
     m_iLengthOfTail = m_iBlockLength * m_iNumIrBlocks + m_iBlockLength;
-    m_pfTail = new float[m_iLengthOfTail] {};
+    m_pfTail = new float[m_iLengthOfTail];
+    CVectorFloat::setZero(m_pfTail, m_iLengthOfTail);
     
     float* cur = m_pfIr;
     for (int block = 0; block < m_iNumIrBlocks; block++)
