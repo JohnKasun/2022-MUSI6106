@@ -16,7 +16,7 @@ Error_t CFastConv::init(float *pfImpulseResponse, int iLengthOfIr, int iBlockLen
     if (!pfImpulseResponse)
         return Error_t::kMemError;
 
-    if (iLengthOfIr <= 0 || iBlockLength <= 0)
+    if (iLengthOfIr <= 0 || iBlockLength <= 0 || !CUtil::isPowOf2(iBlockLength))
         return Error_t::kFunctionInvalidArgsError;
 
     switch (eCompMode)
