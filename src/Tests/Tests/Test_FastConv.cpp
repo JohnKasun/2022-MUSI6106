@@ -8,10 +8,13 @@
 
 #include "gtest/gtest.h"
 
+#include <chrono>
+
 
 namespace fastconv_test {
     void CHECK_ARRAY_CLOSE(float* buffer1, float* buffer2, int iLength, float fTolerance)
     {
+
         for (int i = 0; i < iLength; i++)
         {
             EXPECT_NEAR(buffer1[i], buffer2[i], fTolerance);
@@ -23,18 +26,262 @@ namespace fastconv_test {
     protected:
         void SetUp() override
         {
+            srand(time(0));
+            m_pCFastConv = new CFastConv();
         }
 
         virtual void TearDown()
         {
+            m_pCFastConv->reset();
+            delete m_pCFastConv;
+            m_pCFastConv = 0;
+
+            if (m_pfInput)
+            {
+                delete[] m_pfInput;
+                m_pfInput = 0;
+            }
+            if (m_pfIr)
+            {
+                delete[] m_pfIr;
+                m_pfIr = 0;
+            }
+            if (m_pfTestOutput)
+            {
+                delete[] m_pfTestOutput;
+                m_pfTestOutput = 0;
+            }
+            if (m_pfTestTail)
+            {
+                delete[] m_pfTestTail;
+                m_pfTestTail = 0;
+            }
+            if (m_pfGroundOutput)
+            {
+                delete[] m_pfGroundOutput;
+                m_pfGroundOutput = 0;
+            }
+            if (m_pfGroundTail)
+            {
+                delete[] m_pfGroundTail;
+                m_pfGroundTail = 0;
+            }
         }
 
-        CFastConv *m_pCFastConv = 0;
+        CFastConv* m_pCFastConv = 0;
+        float* m_pfInput = 0;
+        float* m_pfIr = 0;
+        float* m_pfTestOutput = 0;
+        float* m_pfTestTail = 0;
+        float* m_pfGroundOutput = 0;
+        float* m_pfGroundTail = 0;
     };
 
-    TEST_F(FastConv, EmptyTest)
+    TEST_F(FastConv, Identity_Time)
     {
+
+        int iInputLength = 10;
+        int iIrLength = 51;
+        int iOutputLength = iInputLength;
+
+        m_pfInput = new float[iInputLength] {};
+        m_pfIr = new float[iIrLength] {};
+        m_pfTestOutput = new float[iOutputLength] {};
+        m_pfGroundOutput = new float[iOutputLength] {};
+
+        m_pfInput[3] = 1;
+        for (int i = 0; i < iIrLength; i++)
+            m_pfIr[i] = static_cast<float>(rand() % 10);
+        CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
+
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+        m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
+        m_pCFastConv->reset();
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+        std::cout << "IdentityTime = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
     }
+
+    TEST_F(FastConv, FlushBuffer_Time)
+    {
+
+        int iInputLength = 10;
+        int iIrLength = 51;
+        int iOutputLength = iInputLength;
+        int iTailLength = iIrLength - 1;
+
+        m_pfInput = new float[iInputLength] {};
+        m_pfIr = new float[iIrLength] {};
+        m_pfTestOutput = new float[iOutputLength] {};
+        m_pfGroundOutput = new float[iOutputLength] {};
+        m_pfGroundTail = new float[iTailLength] {};
+
+        m_pfInput[3] = 1;
+        for (int i = 0; i < iIrLength; i++)
+            m_pfIr[i] = static_cast<float>(rand() % 10);
+        CVectorFloat::copy(m_pfGroundOutput + 3, m_pfIr, iOutputLength - 3);
+        CVectorFloat::copy(m_pfGroundTail, m_pfIr + 7, iIrLength - 7);
+
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
+
+        m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
+        m_pCFastConv->flushBuffer(m_pfTestTail);
+        m_pCFastConv->reset();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+        std::cout << "FlushBufferTime = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iOutputLength, 0);
+        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
+    }
+
+    TEST_F(FastConv, BlockSize_Time)
+    {
+        int iInputLength = 10000;
+        int iIrLength = 10000;
+        int iTailLength = iIrLength - 1;
+        int blockSizes[8]{ 1, 13, 1023, 2048, 1, 17, 5000, 1897 };
+
+        m_pfInput = new float[iInputLength] {};
+        m_pfIr = new float[iIrLength] {};
+        m_pfTestOutput = new float[iInputLength] {};
+        m_pfGroundOutput = new float[iInputLength] {};
+        m_pfGroundTail = new float[iTailLength] {};
+
+        m_pfInput[6] = 1;
+        for (int i = 0; i < iIrLength; i++)
+            m_pfIr[i] = static_cast<float>(rand() % 10);
+        CVectorFloat::copy(m_pfGroundOutput + 6, m_pfIr, iInputLength - 6);
+        CVectorFloat::copy(m_pfGroundTail, m_pfIr + 9994, iIrLength - 9994);
+
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+        m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kTimeDomain);
+        int iOffset = 0;
+        for (int blockSize : blockSizes)
+        {
+            m_pCFastConv->process(m_pfTestOutput + iOffset, m_pfInput + iOffset, blockSize);
+            iOffset += blockSize;
+        }
+
+        EXPECT_EQ(iTailLength, m_pCFastConv->getTailLength());
+        m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
+        m_pCFastConv->flushBuffer(m_pfTestTail);
+        m_pCFastConv->reset();
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "BlockSizeTime = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+
+        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 0);
+        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 0);
+    }
+
+    TEST_F(FastConv, Identity_Freq)
+    {
+
+        int iInputLength = 100;
+        int iIrLength = 51;
+        int iOutputLength = iInputLength;
+        int iBlockSize = 8;
+
+        m_pfInput = new float[iInputLength] {};
+        m_pfIr = new float[iIrLength] {};
+        m_pfTestOutput = new float[iOutputLength] {};
+        m_pfGroundOutput = new float[iOutputLength] {};
+
+        m_pfInput[3] = 1;
+        for (int i = 0; i < iIrLength; i++)
+            m_pfIr[i] = static_cast<float>(rand() % 10);
+        CVectorFloat::copy(m_pfGroundOutput + iBlockSize + 3, m_pfIr, iIrLength);
+
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+        m_pCFastConv->init(m_pfIr, iIrLength, iBlockSize, CFastConv::ConvCompMode_t::kFreqDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, iInputLength);
+        m_pCFastConv->reset();
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "IdentityFreq = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+
+        CHECK_ARRAY_CLOSE(m_pfTestOutput, m_pfTestOutput, iOutputLength, 1E-3);
+    }
+
+    TEST_F(FastConv, FlushBuffer_Freq)
+    {
+
+        int iInputLength = 100;
+        int iIrLength = 51;
+        int iOutputLength = iInputLength;
+        int iBlockLength = 8;
+
+        m_pfInput = new float[iInputLength] {};
+        m_pfIr = new float[iIrLength] {};
+        m_pfTestOutput = new float[iOutputLength] {};
+        float* m_pfTestFlush = new float[iOutputLength] {};
+
+        m_pfInput[3] = 1;
+        for (int i = 0; i < iIrLength; i++)
+            m_pfIr[i] = static_cast<float>(rand() % 10);
+
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+        m_pCFastConv->init(m_pfIr, iIrLength, iBlockLength, CFastConv::ConvCompMode_t::kFreqDomain);
+        m_pCFastConv->process(m_pfTestOutput, m_pfInput, 4);
+        
+        m_pCFastConv->flushBuffer(m_pfTestFlush);
+        m_pCFastConv->reset();
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "FlushBufferFreq = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+
+        CHECK_ARRAY_CLOSE((m_pfTestFlush + 3 + iBlockLength - 4), m_pfIr, iIrLength, 1E-3);
+    }
+
+//    TEST_F(FastConv, BlockSize_Freq)
+//    {
+//        int iInputLength = 10000;
+//        int iIrLength = 10000;
+//        int iTailLength = iIrLength - 1;
+//        int blockSizes[8]{ 1, 13, 1023, 2048, 1, 17, 5000, 1897 };
+//
+//        m_pfInput = new float[iInputLength] {};
+//        m_pfIr = new float[iIrLength] {};
+//        m_pfTestOutput = new float[iInputLength] {};
+//        m_pfGroundOutput = new float[iInputLength] {};
+//        m_pfGroundTail = new float[iTailLength] {};
+//
+//        m_pfInput[6] = 1;
+//        for (int i = 0; i < iIrLength; i++)
+//            m_pfIr[i] = static_cast<float>(rand() % 10);
+//        CVectorFloat::copy(m_pfGroundOutput + 6, m_pfIr, iInputLength - 6);
+//        CVectorFloat::copy(m_pfGroundTail, m_pfIr + 9994, iIrLength - 9994);
+//
+//        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+//
+//        m_pCFastConv->init(m_pfIr, iIrLength, 8192, CFastConv::ConvCompMode_t::kFreqDomain);
+//        int iOffset = 0;
+//        for (int blockSize : blockSizes)
+//        {
+//            m_pCFastConv->process(m_pfTestOutput + iOffset, m_pfInput + iOffset, blockSize);
+//            iOffset += blockSize;
+//        }
+//
+//        m_pfTestTail = new float[m_pCFastConv->getTailLength()]{};
+//        m_pCFastConv->flushBuffer(m_pfTestTail);
+//        m_pCFastConv->reset();
+//        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+//        std::cout << "BlockSizeFreq = " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " micro s" << std::endl;
+//
+//        CHECK_ARRAY_CLOSE(m_pfGroundOutput, m_pfTestOutput, iInputLength, 1E-3);
+//        CHECK_ARRAY_CLOSE(m_pfGroundTail, m_pfTestTail, iTailLength, 1E-3);
+//    }
 }
 
 #endif //WITH_TESTS
