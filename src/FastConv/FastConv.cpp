@@ -159,7 +159,7 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
         m_iWriteBlock = 0;
         m_iWriteIdx = 0;
     
-        m_iNumBlocks = static_cast<int>(std::ceil(static_cast<float>(m_iLengthOfIr) / static_cast<float>(m_iBlockLength)));
+        m_iNumBlocks = static_cast<int>(std::ceil(m_iLengthOfIr / static_cast<float>(m_iBlockLength)));
         m_iReadBlock = m_iNumBlocks - 1;
 
         // init fft
@@ -184,8 +184,8 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
 
         m_pfInputBuffer = new float[2 * m_iBlockLength];
         CVectorFloat::setZero(m_pfInputBuffer, (m_iBlockLength * 2));
+    
         m_ppfOutputBuffer = new float* [m_iNumBlocks];
-
 
         // fft of ir
 
@@ -208,7 +208,6 @@ CFastConvFreq::CFastConvFreq(float* pfIr, int iLengthOfIr, int iBlockLength) :
                 iAmtIRBlocked = (i * m_iBlockLength) + j;
                 if (iAmtIRBlocked < iLengthOfIr)
                 {
-                    // TODO: not sure whether to use value saved for IR or passed in
                     m_pfIFFT[j] = m_pfIr[iAmtIRBlocked];
                 }
                 else
@@ -236,6 +235,13 @@ CFastConvFreq::~CFastConvFreq()
     delete m_pfIFFT;
     delete m_pfComplexBuffer;
     delete m_pfInputBuffer;
+    
+    m_pfFFTReal = 0;
+    m_pfFFTImag = 0;
+    m_pfFFTImagCurr = 0;
+    m_pfIFFT = 0;
+    m_pfComplexBuffer = 0;
+    m_pfInputBuffer = 0;
 
     for (int i = 0; i < m_iNumBlocks; i++)
     {
@@ -247,9 +253,13 @@ CFastConvFreq::~CFastConvFreq()
     delete m_ppfIRFreqReal;
     delete m_ppfIRFreqImag;
     delete m_ppfOutputBuffer;
+    
+    m_ppfIRFreqReal = 0;
+    m_ppfIRFreqImag = 0;
+    m_ppfOutputBuffer = 0;
 
     CFft::destroyInstance(m_pFFT);
-    
+    m_pFFT = 0;
 }
 
 
@@ -269,10 +279,7 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
            {
                m_iWriteIdx = 0;
 
-               for (int j = 0; j < m_iBlockLength; j++)
-               {
-                   m_ppfOutputBuffer[m_iReadBlock][j] = 0;
-               }
+               CVectorFloat::setZero(m_ppfOutputBuffer[m_iReadBlock], m_iBlockLength);
 
                m_pFFT->doFft(m_pfComplexBuffer, m_pfInputBuffer);
                m_pFFT->splitRealImag(m_pfFFTRealCurr, m_pfFFTImagCurr, m_pfComplexBuffer);
@@ -280,11 +287,12 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
                for (int k = 0; k < m_iNumBlocks; k++)
                {
                    // complex multiplication
-                   for (int m = 0; m <= m_iBlockLength; m++)
+                   for (int i = 0; i <= m_iBlockLength; i++)
                    {
-                       m_pfFFTReal[m] = (m_pfFFTRealCurr[m] * m_ppfIRFreqReal[k][m] - m_pfFFTImagCurr[m] * m_ppfIRFreqImag[k][m]) * 2 * m_iBlockLength;
-                       m_pfFFTImag[m] = (m_pfFFTRealCurr[m] * m_ppfIRFreqImag[k][m] + m_pfFFTImagCurr[k] * m_ppfIRFreqReal[k][m]) * 2 * m_iBlockLength;
+                       m_pfFFTReal[i] = (m_pfFFTRealCurr[i] * m_ppfIRFreqReal[k][i] - m_pfFFTImagCurr[i] * m_ppfIRFreqImag[k][i]) * 2 * m_iBlockLength;
+                       m_pfFFTImag[i] = (m_pfFFTRealCurr[i] * m_ppfIRFreqImag[k][i] + m_pfFFTImagCurr[i] * m_ppfIRFreqReal[k][i]) * 2 * m_iBlockLength;
                    }
+            
 
                    m_pFFT->mergeRealImag(m_pfComplexBuffer, m_pfFFTReal, m_pfFFTImag);
                    m_pFFT->doInvFft(m_pfIFFT, m_pfComplexBuffer);
@@ -293,7 +301,7 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
 
                    for (int m = 0; m < m_iBlockLength; m++)
                    {
-                       m_ppfOutputBuffer[iUpdateWriteIdx][m] = m_ppfOutputBuffer[iUpdateWriteIdx][m] + m_pfIFFT[m + m_iBlockLength];
+                       m_ppfOutputBuffer[iUpdateWriteIdx][m] += m_pfIFFT[m + m_iBlockLength];
                    }
                }
 
@@ -318,3 +326,5 @@ Error_t CFastConvFreq::flushBuffer(float* pfOutputBuffer)
     delete[] pfFlushInputBuffer;
     return Error_t::kNoError;
 }
+
+
