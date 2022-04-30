@@ -64,6 +64,11 @@ Error_t CFastConv::flushBuffer(float* pfOutputBuffer)
 
     return m_pCCFastConvBase->flushBuffer(pfOutputBuffer);
 }
+
+int CFastConv::getTailLength() const
+{
+    return m_pCCFastConvBase->getTailLength();
+}
 //====================================================================
 
 //====================================================================
@@ -325,6 +330,11 @@ Error_t CFastConvFreq::flushBuffer(float* pfOutputBuffer)
     process(pfOutputBuffer, pfFlushInputBuffer, iFlushBufferLength);
     delete[] pfFlushInputBuffer;
     return Error_t::kNoError;
+}
+
+int CFastConvFreq::getTailLength() const
+{
+    return m_iBlockLength + m_iLengthOfIr - 1;
 }
 
 

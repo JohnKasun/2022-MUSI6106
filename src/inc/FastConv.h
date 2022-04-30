@@ -77,6 +77,8 @@ public:
     virtual Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) = 0;
     
     virtual Error_t flushBuffer(float* pfOutputBuffer) = 0;
+    
+    virtual int getTailLength() const = 0;
 
 protected:
 
@@ -97,7 +99,7 @@ public:
 
     Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
     Error_t flushBuffer(float* pfOutputBuffer) override;
-    int getTailLength() const;
+    int getTailLength() const override;
     
 private:
 
@@ -113,6 +115,8 @@ public:
     Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
     
     Error_t flushBuffer(float* pfOutputBuffer) override;
+    
+    int getTailLength() const override;
 private:
 
     int m_iBlockLength;
