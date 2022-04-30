@@ -64,10 +64,6 @@ Error_t CFastConv::flushBuffer(float* pfOutputBuffer)
 
     return m_pCCFastConvBase->flushBuffer(pfOutputBuffer);
 }
-int CFastConv::getTailLength() const
-{
-    return m_pCCFastConvBase->getTailLength();
-}
 //====================================================================
 
 //====================================================================
@@ -85,17 +81,6 @@ CFastConvBase::~CFastConvBase()
     m_pfIr = 0;
 
     m_iLengthOfIr = 0;
-}
-
-Error_t CFastConvBase::flushBuffer(float* pfOutputBuffer)
-{
-    CVectorFloat::copy(pfOutputBuffer, m_pfTail, m_iLengthOfTail);
-    return Error_t::kNoError;
-}
-
-int CFastConvBase::getTailLength() const
-{
-    return m_iLengthOfTail;
 }
 //====================================================================
 
@@ -149,6 +134,17 @@ Error_t CFastConvTime::process(float* pfOutputBuffer, const float* pfInputBuffer
 
     return Error_t::kNoError;
 
+}
+
+Error_t CFastConvTime::flushBuffer(float* pfOutputBuffer)
+{
+    CVectorFloat::copy(pfOutputBuffer, m_pfTail, m_iLengthOfTail);
+    return Error_t::kNoError;
+}
+
+int CFastConvTime::getTailLength() const
+{
+    return m_iLengthOfTail;
 }
 //====================================================================
 
@@ -273,7 +269,6 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
            {
                m_iWriteIdx = 0;
 
-               // not sure if this is necessary
                for (int j = 0; j < m_iBlockLength; j++)
                {
                    m_ppfOutputBuffer[m_iReadBlock][j] = 0;
@@ -311,6 +306,15 @@ Error_t CFastConvFreq::process(float* pfOutputBuffer, const float* pfInputBuffer
                m_iWriteBlock = (m_iWriteBlock + 1) % m_iNumBlocks;
            }
        }
-       return Error_t();
+       return Error_t::kNoError;
 }
 
+Error_t CFastConvFreq::flushBuffer(float* pfOutputBuffer)
+{
+    int iFlushBufferLength = m_iBlockLength + m_iLengthOfIr - 1;
+    float* pfFlushInputBuffer = new float[iFlushBufferLength];
+    CVectorFloat::setZero(pfFlushInputBuffer, iFlushBufferLength);
+    process(pfOutputBuffer, pfFlushInputBuffer, iFlushBufferLength);
+    delete[] pfFlushInputBuffer;
+    return Error_t::kNoError;
+}

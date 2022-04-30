@@ -75,8 +75,8 @@ public:
     virtual ~CFastConvBase();
 
     virtual Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) = 0;
-    Error_t flushBuffer(float* pfOutputBuffer);
-    int getTailLength() const;
+    
+    virtual Error_t flushBuffer(float* pfOutputBuffer) = 0;
 
 protected:
 
@@ -96,7 +96,9 @@ public:
     ~CFastConvTime();
 
     Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
-
+    Error_t flushBuffer(float* pfOutputBuffer) override;
+    int getTailLength() const;
+    
 private:
 
 };
@@ -109,7 +111,8 @@ public:
     ~CFastConvFreq();
 
     Error_t process(float* pfOutputBuffer, const float* pfInputBuffer, int iLengthOfBuffers) override;
-
+    
+    Error_t flushBuffer(float* pfOutputBuffer) override;
 private:
 
     int m_iBlockLength;
